@@ -1,0 +1,100 @@
+%Basic Formatting and Packages---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\usepackage{amsmath} % AMS Math Package
+\usepackage{amssymb}    % Math symbols such as \mathbb
+\usepackage{graphicx} % Allows for eps images
+\usepackage{geometry}
+\usepackage{mathtools}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{enumitem}
+\usepackage{tcolorbox}
+\usepackage{verbatim}
+\usepackage{subcaption}
+\usepackage[ruled, noend]{algorithm2e}
+
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows, positioning}
+
+\geometry{left=2cm,right=2cm,top=2.5cm,bottom=2.5cm}
+
+
+%Own Commands----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+%1. Inequality in set: ieset
+%Default: lhs is tau
+\newcommand{\ieset}[2][\tau]{\{#1 \le #2\}} 
+%Example: to get {X <= t} use this expression $\ieset[X]{t}$
+
+%2. Conditional Expectation for Sigma Algebra: scEx
+%Default: sigma Algebra is F_n
+\newcommand{\scEx}[2][n]{E[#2 \mid \mathfrak{F}_#1]}
+%Example: to get E[ X | F_tau ] use this expression $\scEx[\tau]{X}$
+
+%3. In curly brackets: icb
+\newcommand{\icb}[1]{\{ #1 \}}
+%Example: to get {a = b} use this expression $\icb{a = b}
+
+%4. Norm: norm
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+%Example: to get ||X|| use the expression \norm{X}
+
+%5. Column Vector
+\newcommand*\colvec[1]{\begin{pmatrix}#1\end{pmatrix}}
+%Example: \colvec{a \\ b} gives vector (a,b) transposed.
+
+%6.Row Vector
+\newcommand{\rvec}[1]{\begin{bmatrix} #1 \end{bmatrix}}
+%Example: \rvect{a & b} gives vector (a,b)
+
+
+%Own Operators----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+
+%Pool of frequently used TeX snippets------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+%Greater or equal:
+%.    $t \ge 0$
+%Lesser or equal:
+%.    $\sigma \le t\$
+%Left subset of right:
+%.    $A \subseteq B$:
+%Intersection:
+%.    $A \cap B$
+%Fraction:
+%.    $\frac{a}{b}$
+%Arrow with Text above [] and below {}
+
+\title{Collection}
+
+\begin{document}
+
+\section{Metrics}
+
+\subsection{Receiver Operator Characteristic (ROC)}
+	Consider a binary classification problem where we have a classifier that outputs a continuous score s(X) for an instance X.
+	We then set a threshold $\tau$ to decide the predicted class. If $s(X) > \tau$, we predict the positive class; otherwise, we predict the negative class.
+	
+    	\begin{align*}
+    		TPR(\tau) &= \mathbb{P}(s(X) > \tau | Y = 1) \\
+    		FPR(\tau) &= \mathbb{P}(s(X) > \tau | Y = 0)
+    	\end{align*}
+	
+	Here, $Y$ is the true class of an instance. 
+	TPR is the probability that the classifier ranks a randomly chosen positive instance higher than a randomly chosen negative instance. 
+	Similarly, FPR is the probability that the classifier ranks a randomly chosen negative instance higher than a randomly chosen positive instance.
+    
+    	
+	The ROC curve plots $TPR(\tau)$ against $FPR(\tau)$ for all possible thresholds $\tau$, producing a curve that ranges from $(0,0)$ to $(1,1)$.
+	We can interpret a ROC plot as plotting the path of a function
+	\[
+		f: \mathbb{R} \to [0,1]^2, \quad  \tau \mapsto (TPR(\tau), FPR(\tau))
+	\]
+	The Area Under the ROC Curve (AUC) then provides a single scalar value that represents the expected performance of the classifier.
+	An AUC of $1$ indicates a perfect classifier, while an AUC of $0.5$ indicates a classifier that performs no better than random chance.
+	
+	
+	
+	
+	
+	
+\end{document}
