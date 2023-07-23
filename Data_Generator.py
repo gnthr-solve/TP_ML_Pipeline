@@ -37,3 +37,76 @@ class cont_dist_fam_plt:
         self.dist_list = dist_list
             
 
+
+
+#Normal-Verteilung
+#-------------------------------------------------------------------------------------------------------------------------------------------
+'''
+#set the parameter dictionary. sigma is the standard deviation
+parameters = {'$\mu$': [0,0,0,0], '$\sigma$': [0.5, 1, 1.5, 2]}
+
+#set the distribution
+distribution = st.norm
+
+#set the distribution name on the graph
+distribution_name = 'Normal-Distribution Family'
+
+#set the domain
+r = 10
+domain = np.linspace(-r,r,1000)
+'''
+
+
+#Beta-Distribution
+#-------------------------------------------------------------------------------------------------------------------------------------------
+'''
+#set the parameter dictionary.
+parameters = {'$\\alpha$': [2,3,4,5], '$\\beta$': [2,3,4,5]}
+
+#set the distribution
+distribution = st.beta
+
+#set the distribution name on the graph
+distribution_name = 'Beta-Distribution Family'
+
+#set the domain
+r = 1
+domain = np.linspace(0,r,1000)
+'''
+
+
+#Exponential-Distribution
+#-------------------------------------------------------------------------------------------------------------------------------------------
+''''''
+#set the parameter dictionary.
+#Note : scale is 1/lambda
+#   loc represents a shift on the x axis
+parameters = {'loc': [0, 0, 0, 0], 'scale ($\lambda^{-1}$)': [0.5, 0.75, 1, 1.25]}
+
+#set the distribution
+distribution = st.expon
+
+#set the distribution name on the graph
+distribution_name = 'Exponential-Distribution Family'
+
+#set the domain
+r = 10
+domain = np.linspace(0,r,1000)
+
+
+
+
+#Initialisierung und Ausführung
+#-------------------------------------------------------------------------------------------------------------------------------------------
+''''''
+dist_fam = cont_dist_fam_plt(distribution, distribution_name, domain, **parameters)
+
+dist_fam.create_densities()
+
+
+
+
+
+
+
+
