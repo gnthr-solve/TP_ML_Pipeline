@@ -9,8 +9,8 @@ class cont_dist_fam_plt:
     """
     
     """
-    def __init__(self, distribution, distribution_name, domain, **parameters):
-        self.domain = domain
+    def __init__(self, distribution, distribution_name, size, **parameters):
+        self.size = size
         self.dist_name = distribution_name
         self.dist = distribution
         self.params = parameters
@@ -35,6 +35,27 @@ class cont_dist_fam_plt:
             dist_list.append(self.dist(*param_set))
 
         self.dist_list = dist_list
+
+    
+    def create_data(self):
+        
+        dist_list = self.dist_list
+        parameters_dict = self.params
+
+        k = len(next(iter(parameters_dict.values())))
+
+        self.samples_dict = {}
+
+        for i in range(k):
+
+            legend_string = ''
+        
+            for name, parameters in parameters_dict.items():
+                
+                legend_string = legend_string + '{name} = {parameter}, '.format(name = name, parameter = parameters[i])
+            
+            self.samples_dict[legend_string] = dist_list[i].rvs(size = self.size)
+            
             
 
 
@@ -77,7 +98,7 @@ domain = np.linspace(0,r,1000)
 
 #Exponential-Distribution
 #-------------------------------------------------------------------------------------------------------------------------------------------
-''''''
+'''
 #set the parameter dictionary.
 #Note : scale is 1/lambda
 #   loc represents a shift on the x axis
@@ -94,14 +115,41 @@ r = 10
 domain = np.linspace(0,r,1000)
 
 
+'''
 
 
-#Initialisierung und Ausführung
+#Multi_normal
 #-------------------------------------------------------------------------------------------------------------------------------------------
 ''''''
-dist_fam = cont_dist_fam_plt(distribution, distribution_name, domain, **parameters)
+#set the parameter dictionary. sigma is the standard deviation
+mu_c1 = [0,0]
+mu_c2 = [3,3]
+sigma_c1 = np.array([[1,0],
+                       [0,3]])
+sigma_c2 = np.array([[2,1],
+                       [0,1]])
+parameters = {'$\mu$': [mu_c1, mu_c2], '$\sigma$': [sigma_c1,sigma_c2]}
+
+#set the distribution
+distribution = st.multivariate_normal
+
+#set the distribution name on the graph
+distribution_name = 'Normal-Distribution Family'
+
+size = 20
+
+
+
+#Initialisation and execution
+#-------------------------------------------------------------------------------------------------------------------------------------------
+''''''
+dist_fam = cont_dist_fam_plt(distribution, distribution_name, size, **parameters)
 
 dist_fam.create_densities()
+dist_fam.create_data()
+
+#print(dist_fam.dist_list)
+print(dist_fam.samples_dict)
 
 
 
