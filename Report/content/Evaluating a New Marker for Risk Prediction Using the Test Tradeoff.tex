@@ -1,0 +1,164 @@
+
+\section{Evaluating a New Marker for Risk Prediction Using the Test Tradeoff}
+
+\subsection{Definitions (adapted to previous notation)}
+	Let $\rho$ be a risk score a model outputs, where $\rho(X)$ is the score for instance $X$.
+	Let $D\in \{0,1\}$ be the r.v. that states disease $D=1$ or not disease $D=0$.
+	Then probability of developing disease if the risk score is $\rho(X)=s$ is given by
+	\[
+		R_s = \mathbb{P}(D=1 | \rho(X) = s)
+	\]
+	Requirement: If $s_1 < s_2 \Rightarrow R_{s_1} < R_{s_2}$
+	Cutoff $\tau$ defined such that 
+	\[
+	\begin{aligned}
+    		\rho(X) \geq \tau &\Rightarrow \hat{Y} = 1 \\
+    		\rho(X) < \tau &\Rightarrow \hat{Y} = 0 \\
+    	\end{aligned}
+	\]
+	Then the True Positive Rate and the False Positive Rate are
+	\[
+	\begin{aligned}
+    		TPR(\tau) &= \mathbb{P}(\rho(X) \geq \tau | D = 1) \\
+    		FPR(\tau) &= \mathbb{P}(\rho(X) \geq \tau | D = 0) \\
+    	\end{aligned}
+	\]
+	We say the probability of having/developing the disease is $\mathbb{P}(D=1)$
+	Let $T$ be treatment or no treatment and define the utilities
+	\[
+	\begin{aligned}
+    		U_{T, D} 			&\quad \text{utility of treating person with disease}\\
+		U_{\neg T, D} 		&\quad \text{utility of not treating person with disease}\\
+		U_{\neg T, \neg D} 	&\quad \text{utility of not treating person without disease}\\
+		U_{T, \neg D} 		&\quad \text{utility of treating person without disease}\\
+    	\end{aligned}
+	\]
+	and $U_{test}$ the negative utility / harm of a test.
+	
+\subsection{Assumptions}
+
+	Assumptions:
+	\[
+	\begin{aligned}
+    		U_{T, D} 	&> U_{\neg T, D}\\
+		U_{\neg T, \neg D} &> U_{T, \neg D} \\
+		U_{test} &< 0 \\
+    	\end{aligned}
+	\]
+	
+\subsection{Comparison of the Maximum Expected Utility of Risk Prediction}	
+
+	Comparison of the net benefit of Model 2 versus Model 1 is a comparison of the maximum expected utility of risk prediction under Model 2 versus Model 1.
+	The maximum expected utility of risk prediction is the maximum, over the cutpoints, of the expected utility of risk prediction.
+	The \textbf{expected utility of risk prediction} is
+	\[
+	\begin{aligned}
+    		U_{pred}(\tau) 
+		=& P \mathbb{P}(\rho(X) \geq \tau | D = 1) U_{T, D}\\
+    		&+ P \mathbb{P}(\rho(X) < \tau | D = 1) U_{\neg T, D}\\
+		&+ (1 - P) \mathbb{P}(\rho(X) \geq \tau | D = 0) U_{T, \neg D}\\
+		&+ (1 - P) \mathbb{P}(\rho(X) < \tau | D = 0) U_{\neg T, \neg D}\\
+		&+ U_{test}
+    	\end{aligned}
+	\]
+	These definitions allow to express 
+	\textbf{Fundamental Rule Version 1:}
+	\[
+		\text{select model 2 if}: \quad \max_\tau U^2_{pred}(\tau) > \max_\tau U^1_{pred}(\tau)
+	\]
+	
+	Comparing maximum expected utilities of risk prediction: a simplification involving the no treatment option
+	
+	Setting the probabilities for no treatment to $1$ and the ones for treatment to $0$ the expected utility of no treatment at all is:
+	\[
+		U_{\neg T} =  P  U_{\neg T, D}+ (1 - P)  U_{\neg T, \neg D}
+	\]
+	and analogously the expected utility of treating everyone is
+	\[
+		U_{ T} =  P  U_{T, D} + (1 - P)  U_{T, \neg D}
+	\]
+	The expected utility of risk prediction in excess of the expected utility of no treatment is thus
+	\[
+	\begin{aligned}
+		U_{pred*}(\tau) =& U_{pred}(\tau) - U_{\neg T}
+		=& P \mathbb{P}(\rho(X) \geq \tau | D = 1) U_{T, D}\\
+    		&+ P \mathbb{P}(\rho(X) < \tau | D = 1) U_{\neg T, D}\\
+		&+ (1 - P) \mathbb{P}(\rho(X) \geq \tau | D = 0) U_{T, \neg D}\\
+		&+ (1 - P) \mathbb{P}(\rho(X) < \tau | D = 0) U_{\neg T, \neg D}\\
+		&+ U_{test} \\
+		&- P  U_{\neg T, D} - (1 - P)  U_{\neg T, \neg D} \\
+		=& P \mathbb{P}(\rho(X) \geq \tau | D = 1) U_{T, D}\\
+		&- P \mathbb{P}(\rho(X) \geq \tau | D = 1) U_{\neg T, D}\\
+		&+ (1 - P) \mathbb{P}(\rho(X) \geq \tau | D = 0) U_{T, \neg D}\\
+		&- (1 - P) \mathbb{P}(\rho(X) \geq \tau | D = 0) U_{\neg T, \neg D}\\
+		&+ U_{test} \\
+		=& P \mathbb{P}(\rho(X) \geq \tau | D = 1) (U_{T, D} - U_{\neg T, D})\\\
+		&+ (1 - P) \mathbb{P}(\rho(X) \geq \tau | D = 0) (U_{T, \neg D} - U_{\neg T, \neg D})\\
+		&+ U_{test} \\
+	\end{aligned}
+	\]
+	When defining
+	\[
+	\begin{aligned}
+		B :=&  U_{T, D} - U_{\neg T, D} \\
+		C :=&  U_{T, \neg D} - U_{\neg T, \neg D} \\
+	\end{aligned}
+	\]
+	we can write this as
+	
+	\[
+		U_{pred*}(\tau) = P \mathbb{P}(\rho(X) \geq \tau | D = 1) B + (1 - P) \mathbb{P}(\rho(X) \geq \tau | D = 0) C + U_{test}
+	\]
+	
+	The \textbf{risk threshold}, denoted $T$, is the probability of developing disease in the population at which the expected utility of treatment and no treatment is the same.
+	We obtain it by substituting $T$ for $P$ when setting $U_{\neg T} = U_{T}$ in equations and solving for $T$ to get the following formula for the risk threshold, 
+	\[
+		T =  \frac{C}{C + B}
+	\]
+	and for the odds of the risk threshold this gives
+	\[
+		 \frac{T}{1 - T} =  \frac{C}{B}
+	\]
+
+
+\subsection{Net Benefit}
+	The \textbf{Net Benefit} $NB(\tau)$ is defined as 
+	
+	\[
+	\begin{aligned}
+		NB(\tau) =& \frac{U_{pred}(\tau) - U_{\neg T}}{B} \\
+		=& \frac{P \mathbb{P}(\rho(X) \geq \tau | D = 1) B + (1 - P) \mathbb{P}(\rho(X) \geq \tau | D = 0) C + U_{test}}{B} \\
+		=& P \mathbb{P}(\rho(X) \geq \tau | D = 1) + (1 - P) \mathbb{P}(\rho(X) \geq \tau | D = 0) \frac{C}{B} + \frac{U_{test} }{B} \\
+		& \text{substituting the risk threshold} \\
+		=& P \mathbb{P}(\rho(X) \geq \tau | D = 1) + (1 - P) \mathbb{P}(\rho(X) \geq \tau | D = 0) \frac{T}{1 - T} + \frac{U_{test} }{B} \\
+	\end{aligned}
+	\]
+	
+	We can also see that, with $P = \mathbb{P}(D=1)$ we can replace the conditional with a joint probability
+	\[
+	\begin{aligned}
+		NB(\tau) =& P \mathbb{P}(\rho(X) \geq \tau | D = 1) + (1 - P) \mathbb{P}(\rho(X) \geq \tau | D = 0) \frac{T}{1 - T} + \frac{U_{test} }{B} \\
+		=& \mathbb{P}(\rho(X) \geq \tau , D = 1) + \mathbb{P}(\rho(X) \geq \tau , D = 0) \frac{T}{1 - T} + \frac{U_{test} }{B} \\
+		& \text{for concrete model the joint probabilities represent the TP and FP respectively} \\
+		=& \frac{\text{TP}}{N} + \frac{T}{1 - T} \frac{\text{FP}}{N} + \frac{U_{test} }{B} \\
+	\end{aligned}
+	\]
+	So in absence of testing costs we have:
+	\[
+		NB(\tau) = \frac{\text{TP} + \frac{T}{1 - T} \text{FP}}{N}
+	\]
+	This net benefit for a decision curve, $NB$, is the maximum benefit of risk prediction (in excess of the benefit of no treatment)
+	in units of the benefit of treating a true positive. 
+	It equals the benefit of treating a true positive after subtracting the cost of treating a false positive at an “exchange rate” based on the risk threshold.
+	
+	
+	
+	Optimization Requirement, $R_t = T$,
+	$ROCSLOPEt = \frac{1 - P}{P}\frac{T}{1 - T}$
+	
+	
+	
+	
+	
+	
+	
