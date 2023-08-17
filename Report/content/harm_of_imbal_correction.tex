@@ -11,10 +11,13 @@
 	we accept up to 9 false positives, or unnecessary treatments, per true positive.
 	
 \subsection{Discussion}
+<<<<<<< HEAD
 	\begin{figure}[h]
          	\includegraphics[height=0.5\textheight]{assets/harm_class_imbalance_corr/risk_benefit_SMOTE_RUS_ROS.png}
          	\caption{Risk vs Net Benefit for uncorrected vs ROS, RUS and SMOTE}
          \end{figure}
+=======
+>>>>>>> baseline
 	The key finding of our work is that training logistic regression models on imbalance corrected data did not lead to better AUROC 
 	compared to models trained on uncorrected data, but did result in strong and systematic overestimation of the probability for the minority class. 
 	In addition, all imbalance corrections had negative consequences for the calibration slope. 
@@ -25,6 +28,7 @@
 	Class imbalance is often framed as problematic in the context of prediction models that classify patients into low-risk versus high-risk groups. 
 	Nevertheless, for clinical prediction models the accurate estimation of probabilities is essential to help in defining such low-risk and high-risk groups. 
 	For instance, clinical staff using the model to support treatment decisions may choose probability thresholds
+<<<<<<< HEAD
 	to match the assumed misclassification costs that best fit the context.
 	
 	In contrast, our study suggests that, at least for logistic regression models, 
@@ -35,3 +39,6 @@
 	The imbalance corrections resulted in inaccurate probability estimates without improving discrimination in terms of AUROC.
 	
 	
+=======
+	to match the assumed misclassification costs that best fit the context.
+>>>>>>> baseline
