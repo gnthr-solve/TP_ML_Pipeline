@@ -219,9 +219,9 @@ domain = np.linspace(0,r,1000)
 mu_c1 = [0,0]
 mu_c2 = [3,3]
 sigma_c1 = np.array([[1,0],
-                       [0,3]])
+                     [0,3]])
 sigma_c2 = np.array([[2,1],
-                       [0,1]])
+                     [0,1]])
 parameters = {'$\mu$': [mu_c1, mu_c2], '$\sigma$': [sigma_c1,sigma_c2]}
 
 #set the distribution

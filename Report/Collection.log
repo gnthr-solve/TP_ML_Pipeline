@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2023.4.10)  13 AUG 2023 14:55
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2023.4.10)  14 AUG 2023 12:37
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -716,38 +716,40 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 
 {/usr/local/texlive/2023/texmf-var/fonts/map/pdftex/updmap/pdftex.map}] [2])
 (./content/harm_of_imbal_correction.tex
-<assets/risk_benefit_SMOTE_RUS_ROS.png, id=22, 588.1975pt x 576.1525pt>
-File: assets/risk_benefit_SMOTE_RUS_ROS.png Graphic file (type png)
-<use assets/risk_benefit_SMOTE_RUS_ROS.png>
-Package pdftex.def Info: assets/risk_benefit_SMOTE_RUS_ROS.png  used on input l
-ine 15.
+<assets/harm_class_imbalance_corr/risk_benefit_SMOTE_RUS_ROS.png, id=22, 588.19
+75pt x 576.1525pt>
+File: assets/harm_class_imbalance_corr/risk_benefit_SMOTE_RUS_ROS.png Graphic f
+ile (type png)
+<use assets/harm_class_imbalance_corr/risk_benefit_SMOTE_RUS_ROS.png>
+Package pdftex.def Info: assets/harm_class_imbalance_corr/risk_benefit_SMOTE_RU
+S_ROS.png  used on input line 15.
 (pdftex.def)             Requested size: 358.7461pt x 351.39154pt.
 
 
 LaTeX Warning: `h' float specifier changed to `ht'.
 
-[3]) (./content/stat_metrics.tex [4 <./assets/risk_benefit_SMOTE_RUS_ROS.png>]
-[5] [6]) [7] (./Collection.aux) ) 
+[3]) (./content/stat_metrics.tex [4 <./assets/harm_class_imbalance_corr/risk_be
+nefit_SMOTE_RUS_ROS.png>] [5] [6]) [7] (./Collection.aux) ) 
 Here is how much of TeX's memory you used:
  20537 strings out of 476025
- 422903 string characters out of 5790017
+ 423085 string characters out of 5790017
  1866388 words of memory out of 5000000
  40679 multiletter control sequences out of 15000+600000
  518453 words of font info for 55 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  83i,10n,80p,444b,302s stack positions out of 10000i,1000n,20000p,200000b,200000s
-</usr/local/texlive/2023/texmf-dist/fonts/type
-1/public/amsfonts/cm/cmbx10.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1
-/public/amsfonts/cm/cmbx12.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/
-public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/p
-ublic/amsfonts/cm/cmmi8.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/pub
-lic/amsfonts/cm/cmr10.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/publi
-c/amsfonts/cm/cmr6.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/a
-msfonts/cm/cmr8.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsf
-onts/cm/cmsy10.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsfo
-nts/cm/cmsy8.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsfont
-s/symbols/msbm10.pfb>
-Output written on Collection.pdf (7 pages, 484916 bytes).
+</usr/local/texlive/
+2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/local/texlive/2
+023/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/local/texlive/20
+23/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/202
+3/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/local/texlive/2023/
+texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2023/te
+xmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/local/texlive/2023/texmf
+-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/local/texlive/2023/texmf-di
+st/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2023/texmf-dis
+t/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/local/texlive/2023/texmf-dist/
+fonts/type1/public/amsfonts/symbols/msbm10.pfb>
+Output written on Collection.pdf (7 pages, 485308 bytes).
 PDF statistics:
  84 PDF objects out of 1000 (max. 8388607)
  52 compressed objects within 1 object stream
