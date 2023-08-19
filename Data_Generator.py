@@ -107,7 +107,7 @@ class Cont_Dist_Generator:
         self.params = parameters
 
 
-    def create_densities(self):
+    def freeze_distributions(self):
         parameters_dict = self.params
         
         dist_list = []
@@ -133,19 +133,18 @@ class Cont_Dist_Generator:
         dist_list = self.dist_list
         parameters_dict = self.params
 
-        k = len(next(iter(parameters_dict.values())))
-
         self.samples_dict = {}
 
-        for i in range(k):
+        for i in range(2):
+            print(i)
+            #go by minority as class 1 (positive) and majority as class 0
+            self.samples_dict[f'X_{i}'] = dist_list[i].rvs(size = self.size[i])
+            self.samples_dict[f'Y_{i}'] = i * np.ones(self.size[i])
 
-            legend_string = ''
-        
             for name, parameters in parameters_dict.items():
                 
-                legend_string = legend_string + '{name} = {parameter}, '.format(name = name, parameter = parameters[i])
-            
-            self.samples_dict[legend_string] = dist_list[i].rvs(size = self.size)
+                self.samples_dict[name + f'_{i}'] = parameters[i]
+                
             
             
 
@@ -221,8 +220,8 @@ mu_c2 = [3,3]
 sigma_c1 = np.array([[1,0],
                      [0,3]])
 sigma_c2 = np.array([[2,1],
-                     [0,1]])
-parameters = {'$\mu$': [mu_c1, mu_c2], '$\sigma$': [sigma_c1,sigma_c2]}
+                     [1,1]])
+parameters = {'mu': [mu_c1, mu_c2], 'sigma': [sigma_c1,sigma_c2]}
 
 #set the distribution
 distribution = st.multivariate_normal
@@ -230,7 +229,7 @@ distribution = st.multivariate_normal
 #set the distribution name on the graph
 distribution_name = 'Normal-Distribution Family'
 
-size = 20
+size = [100, 10]
 
 
 
@@ -239,7 +238,7 @@ size = 20
 ''''''
 dist_fam = Cont_Dist_Generator(distribution, distribution_name, size, **parameters)
 
-dist_fam.create_densities()
+dist_fam.freeze_distributions()
 dist_fam.create_data()
 
 #print(dist_fam.dist_list)
