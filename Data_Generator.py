@@ -59,6 +59,7 @@ class ImbalancedDataGenerator:
             class_sep=self.distance,
             random_state=self.random_state
         )
+        #print(self.X, self.y)
         X_train, X_test, y_train, y_test = train_test_split(
             self.X, 
             self.y, 
@@ -112,9 +113,9 @@ class Cont_Dist_Generator:
         
         dist_list = []
 
-        n = len(next(iter(parameters_dict.values())))
+        #n = len(next(iter(parameters_dict.values())))
 
-        for i in range(n):
+        for i in range(2):
 
             param_set = []
 
@@ -136,7 +137,7 @@ class Cont_Dist_Generator:
         self.samples_dict = {}
 
         for i in range(2):
-            print(i)
+    
             #go by minority as class 1 (positive) and majority as class 0
             self.samples_dict[f'X_{i}'] = dist_list[i].rvs(size = self.size[i])
             self.samples_dict[f'Y_{i}'] = i * np.ones(self.size[i])
@@ -145,30 +146,11 @@ class Cont_Dist_Generator:
                 
                 self.samples_dict[name + f'_{i}'] = parameters[i]
                 
+        return self.samples_dict
             
-            
 
 
 
-
-
-
-#Normal-Verteilung
-#-------------------------------------------------------------------------------------------------------------------------------------------
-'''
-#set the parameter dictionary. sigma is the standard deviation
-parameters = {'$\mu$': [0,0,0,0], '$\sigma$': [0.5, 1, 1.5, 2]}
-
-#set the distribution
-distribution = st.norm
-
-#set the distribution name on the graph
-distribution_name = 'Normal-Distribution Family'
-
-#set the domain
-r = 10
-domain = np.linspace(-r,r,1000)
-'''
 
 
 #Beta-Distribution
@@ -189,26 +171,6 @@ domain = np.linspace(0,r,1000)
 '''
 
 
-#Exponential-Distribution
-#-------------------------------------------------------------------------------------------------------------------------------------------
-'''
-#set the parameter dictionary.
-#Note : scale is 1/lambda
-#   loc represents a shift on the x axis
-parameters = {'loc': [0, 0, 0, 0], 'scale ($\lambda^{-1}$)': [0.5, 0.75, 1, 1.25]}
-
-#set the distribution
-distribution = st.expon
-
-#set the distribution name on the graph
-distribution_name = 'Exponential-Distribution Family'
-
-#set the domain
-r = 10
-domain = np.linspace(0,r,1000)
-
-
-'''
 
 
 #Multi_normal
@@ -229,23 +191,28 @@ distribution = st.multivariate_normal
 #set the distribution name on the graph
 distribution_name = 'Normal-Distribution Family'
 
-size = [100, 10]
+size = [90, 10]
 
 
 
-#Initialisation and execution
+#Test and Comparison
 #-------------------------------------------------------------------------------------------------------------------------------------------
 ''''''
-dist_fam = Cont_Dist_Generator(distribution, distribution_name, size, **parameters)
+dist_gen_spec = Cont_Dist_Generator(distribution, distribution_name, size, **parameters)
 
-dist_fam.freeze_distributions()
-dist_fam.create_data()
+dist_gen_spec.freeze_distributions()
+spec_samples = dist_gen_spec.create_data()
 
 #print(dist_fam.dist_list)
-print(dist_fam.samples_dict)
+print(spec_samples, '\n')
 
 
 
+dist_gen_sklearn = ImbalancedDataGenerator(class_ratio= 0.1, n_samples= 100, n_features=2)
+
+sklearn_samples = dist_gen_sklearn.generate_data()
+
+#print(sklearn_samples)
 
 
 
