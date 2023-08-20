@@ -101,11 +101,14 @@ class ImbalancedDataGenerator:
 
 class Cont_Dist_Generator:
     
-    def __init__(self, distribution, distribution_name, size, **parameters):
+    def __init__(self, distribution, distribution_name, size, random_state = 1234, **parameters):
         self.size = size
         self.dist_name = distribution_name
         self.dist = distribution
         self.params = parameters
+        self.random_state = random_state
+
+        self.freeze_distributions()
 
 
     def freeze_distributions(self):
@@ -140,15 +143,38 @@ class Cont_Dist_Generator:
     
             #go by minority as class 1 (positive) and majority as class 0
             self.samples_dict[f'X_{i}'] = dist_list[i].rvs(size = self.size[i])
-            self.samples_dict[f'Y_{i}'] = i * np.ones(self.size[i])
+            self.samples_dict[f'y_{i}'] = i * np.ones(self.size[i])
 
             for name, parameters in parameters_dict.items():
                 
                 self.samples_dict[name + f'_{i}'] = parameters[i]
                 
-        return self.samples_dict
-            
+        #return self.samples_dict
+    
 
+    def prepare_data(self, test_size):
+        
+        self.create_data()
+        X_0 = self.samples_dict[f'X_0']
+        X_1 = self.samples_dict[f'X_1']
+        y_0 = self.samples_dict[f'y_0']
+        y_1 = self.samples_dict[f'y_1']
+        
+        X = np.concatenate((X_0, X_1), axis=0)
+        y = np.concatenate((y_0, y_1), axis=0)
+        
+        # Generate a random permutation of indices
+        permuted_indices = np.random.permutation(len(X))
+
+        self.X = X[permuted_indices]
+        self.y = y[permuted_indices]
+
+        return train_test_split(
+            self.X, 
+            self.y, 
+            test_size = test_size, 
+            random_state=self.random_state
+            )
 
 
 
@@ -183,7 +209,7 @@ sigma_c1 = np.array([[1,0],
                      [0,3]])
 sigma_c2 = np.array([[2,1],
                      [1,1]])
-parameters = {'mu': [mu_c1, mu_c2], 'sigma': [sigma_c1,sigma_c2]}
+parameters = {'mu': [mu_c1, mu_c2], 'sigma': [sigma_c1, sigma_c2]}
 
 #set the distribution
 distribution = st.multivariate_normal
@@ -200,8 +226,8 @@ size = [90, 10]
 ''''''
 dist_gen_spec = Cont_Dist_Generator(distribution, distribution_name, size, **parameters)
 
-dist_gen_spec.freeze_distributions()
-spec_samples = dist_gen_spec.create_data()
+#dist_gen_spec.freeze_distributions()
+spec_samples = dist_gen_spec.prepare_data(0.2)
 
 #print(dist_fam.dist_list)
 print(spec_samples, '\n')
@@ -212,7 +238,7 @@ dist_gen_sklearn = ImbalancedDataGenerator(class_ratio= 0.1, n_samples= 100, n_f
 
 sklearn_samples = dist_gen_sklearn.generate_data()
 
-#print(sklearn_samples)
+print(sklearn_samples)
 
 
 
