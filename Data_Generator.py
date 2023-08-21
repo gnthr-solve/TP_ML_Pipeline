@@ -272,56 +272,60 @@ class Multi_Dist_Generator:
 
 class Multi_Modal_Dist_Generator:
     
-    def __init__(self, distributions, params_dict_list, size, random_state = 1234):
-        self.size = size
+    def __init__(self, distributions, params_dict_list, sizes, random_state = 1234):
+        self.sizes = sizes
         self.dists = distributions
         self.params_dict_list = params_dict_list
         self.random_state = random_state
 
-        self.freeze_distributions()
 
 
-    def freeze_create(self):
+    def create_data(self):
         
-        frozen_dists = {'c0': [], 'c1': []}
+        self.dists_sample_lists = {'c0': [], 'c1': []}
         
         for l, parameters_dict in enumerate(self.params_dict_list):
             #print(parameters_dict.values())
 
-            if (k:=parameters_dict['modes']) > 1:
-                acc_list_c0 = []
-                acc_list_c1 = []
+            for i in range(2):
 
-                for i in range(k):
-                    params_c0 = {key: value[i] for key, value in parameters_dict['params_c0'].items()}
-                    params_c1 = {key: value[i] for key, value in parameters_dict['params_c1'].items()}
+                if (modes:=parameters_dict[f'modes_c{i}']) > 1:
+                    
+                    self.create_multimodal_features(c_id = i, 
+                                                    dist = self.dists[l], 
+                                                    params_dict = parameters_dict[f'params_c{i}'], 
+                                                    modes = modes, 
+                                                    mixing_weights = parameters_dict[f'mixing_weights_c{i}'])
 
-                    acc_list_c0.append(self.dists[l](**params_c0))
-                    acc_list_c1.append(self.dists[l](**params_c1))
+                else:
+                    self.create_unimodal_features(c_id = i, 
+                                                  dist = self.dists[l], 
+                                                  params_dict = parameters_dict[f'params_c{i}'] )
+        
 
-                frozen_dists['c0'].append(acc_list_c0)
-                frozen_dists['c1'].append(acc_list_c1)
+        self.dists_sample_lists = {key: [array if len(array.shape)==2 else array.reshape(-1, 1) for array in sample_features_list]
+                                   for key, sample_features_list in self.dists_sample_lists.items()}
+        
+        X_c0 = np.concatenate(self.dists_sample_lists['c0'], axis = 1)
+        X_c1 = np.concatenate(self.dists_sample_lists['c1'], axis = 1)
+        print(X_c1)
 
-            else:
-                k = len(next(iter(parameters_dict['params_c0'].values())))
+        y_c0 = np.zeros(self.sizes[0])
+        y_c1 = np.ones(self.sizes[1])
 
-                for i in range(k):
-                    params_c0 = {key: value[i] for key, value in parameters_dict['params_c0'].items()}
-                    params_c1 = {key: value[i] for key, value in parameters_dict['params_c1'].items()}
-
-                    frozen_dists['c0'].append(self.dists[l](**params_c0))
-                    frozen_dists['c1'].append(self.dists[l](**params_c1))
-
+        self.X = np.concatenate( (X_c0, X_c1), axis = 0)
+        self.y = np.concatenate( (y_c0, y_c1), axis = 0)
                 
-        self.frozen_dists = frozen_dists
 
-    
-    def create_multimodal_data(self, size, dist, params_dict, modes, mixing_weights):
+
+    def create_multimodal_features(self, c_id, dist, params_dict, modes, mixing_weights):
+
+        size = self.sizes[c_id]
 
         k = modes
 
         multinomial = st.multinomial(size, mixing_weights)
-        comp_sizes = multinomial.rvs(size = 1)
+        comp_sizes = multinomial.rvs(size = 1)[0]
 
         acc_list = []
 
@@ -332,82 +336,33 @@ class Multi_Modal_Dist_Generator:
             frozen_dist = dist(**params)
 
             acc_list.append(frozen_dist.rvs(size = comp_sizes[i]))
+
+        feature_samples = np.concatenate( acc_list, axis = 0)
+
+        self.dists_sample_lists[f'c{c_id}'].append(feature_samples)
         
-        
 
 
-    def freeze_distributions(self):
-        
-        frozen_dists = {'c0': [], 'c1': []}
-        
-        for l, parameters_dict in enumerate(self.params_dict_list):
-            #print(parameters_dict.values())
+    def create_unimodal_features(self, c_id, dist, params_dict):
 
-            if (k:=parameters_dict['modes']) > 1:
-                acc_list_c0 = []
-                acc_list_c1 = []
+        size = self.sizes[c_id]
 
-                for i in range(k):
-                    params_c0 = {key: value[i] for key, value in parameters_dict['params_c0'].items()}
-                    params_c1 = {key: value[i] for key, value in parameters_dict['params_c1'].items()}
+        k = len(next(iter(params_dict.values())))
 
-                    acc_list_c0.append(self.dists[l](**params_c0))
-                    acc_list_c1.append(self.dists[l](**params_c1))
-
-                frozen_dists['c0'].append(acc_list_c0)
-                frozen_dists['c1'].append(acc_list_c1)
-
-            else:
-                k = len(next(iter(parameters_dict['params_c0'].values())))
-
-                for i in range(k):
-                    params_c0 = {key: value[i] for key, value in parameters_dict['params_c0'].items()}
-                    params_c1 = {key: value[i] for key, value in parameters_dict['params_c1'].items()}
-
-                    frozen_dists['c0'].append(self.dists[l](**params_c0))
-                    frozen_dists['c1'].append(self.dists[l](**params_c1))
-
-                
-        self.frozen_dists = frozen_dists
-
-    
-
-    def create_data(self):
-
-        frozen_dists = self.frozen_dists
-        dist_list_c0 = frozen_dists['c0']
-        dist_list_c1 = frozen_dists['c1']
-
-        k = len(next(iter(frozen_dists.values())))
-        
-        self.samples_dict = {}
-        sample_features_c0 = []
-        sample_features_c1 = []
+        sample_features_list = []
 
         for i in range(k):
+
+            params = {key: value[i] for key, value in params_dict.items()}
+
+            frozen_dist = dist(**params)
+
+            sample_features_list.append(frozen_dist.rvs(size = size))
+
+        self.dists_sample_lists[f'c{c_id}'].extend(sample_features_list)
+
             
-            if isinstance(dist_list_c0[i], list): 
-                #go by minority as class 1 (positive) and majority as class 0
-                sample_features_c0.append(dist_list_c0[i].rvs(size = self.size[0]))
-                sample_features_c1.append(dist_list_c1[i].rvs(size = self.size[1]))
-            
-
-        sample_features_c0 = [array if len(array.shape)==2 else array.reshape(-1, 1) for array in sample_features_c0]
-        sample_features_c1 = [array if len(array.shape)==2 else array.reshape(-1, 1) for array in sample_features_c1]
-        #print(sample_features_c1)
-
-        X_c0 = np.concatenate(sample_features_c0, axis = 1)
-        X_c1 = np.concatenate(sample_features_c1, axis = 1)
-        #print(X_c1)
-
-        y_c0 = np.zeros(self.size[0])
-        y_c1 = np.ones(self.size[1])
-
-        self.X = np.concatenate( (X_c0, X_c1), axis = 0)
-        self.y = np.concatenate( (y_c0, y_c1), axis = 0)
-        
     
-
     def prepare_data(self, test_size):
         
         self.create_data()
@@ -430,7 +385,7 @@ class Multi_Modal_Dist_Generator:
 
 
 """
-Multi-Normal Example
+Single Distribution: Multi-Normal Example
 -------------------------------------------------------------------------------------------------------------------------------------------
 
 #set the parameter dictionary. sigma is the standard deviation
@@ -475,77 +430,9 @@ print(sklearn_samples)
 
 
 """
-Multiple Distributions Example
+Multiple Distributions: Multinormal + Beta + Exponential Example
 -------------------------------------------------------------------------------------------------------------------------------------------
-"""
-#set the parameter dictionary for the MV normal. sigma is the standard deviation
-mu_c0_1 = [0,0]
-mu_c0_2 = [2,0]
-mu_c1_1 = [3,3]
-mu_c1_2 = [1,3]
-sigma_c0_1 = np.array([[1,0],
-                       [0,3]])
-sigma_c0_2 = np.array([[1,0],
-                       [0,1]])
-sigma_c1_1 = np.array([[2,1],
-                       [1,1]])
-sigma_c1_2 = np.array([[2,1],
-                       [1,2]])
 
-
-distributions = [st.multivariate_normal, st.beta, st.expon]
-
-#set the parameter dictionaries as a list of dictionaries with parameter dictionaries for classes individually.
-dist_parameter_dicts = [{'modes': 2,
-                         'mixing_weights': [0.3, 0.7],
-                         'params_c0': {'mean': [mu_c0_1, mu_c0_2], 'cov': [sigma_c0_1, sigma_c0_2]},
-                         'params_c1': {'mean': [mu_c1_1, mu_c1_2], 'cov': [sigma_c1_1, sigma_c1_2]}
-                         },
-                        {'modes': 1,
-                         #'mixing_weights': [],
-                         'params_c0': {'a': [2,3], 'b': [4,5]},
-                         'params_c1': {'a': [1,2], 'b': [7,8]}
-                         },
-                        {'modes': 1,
-                         #'mixing_weights': [],
-                         'params_c0': {'loc': [0], 'scale': [1]},
-                         'params_c1': {'loc': [0], 'scale': [3]}
-                         }
-]
-
-size = [90, 10]
-
-
-
-"""
-Test and Comparison Mult_Dist_Generator
--------------------------------------------------------------------------------------------------------------------------------------------
-"""
-dist_gen_spec = Multi_Dist_Generator(distributions, dist_parameter_dicts, size)
-
-#dist_gen_spec.create_data()
-#spec_samples = (dist_gen_spec.X, dist_gen_spec.y)
-
-spec_samples = dist_gen_spec.prepare_data(0.2)
-
-#print(dist_fam.dist_list)
-print(spec_samples, '\n')
-
-
-
-dist_gen_sklearn = ImbalancedDataGenerator(class_ratio= 0.1, n_samples= 100, n_features=5)
-
-sklearn_samples = dist_gen_sklearn.generate_data()
-
-#print(sklearn_samples)
-
-
-
-
-"""
-Multiple Distributions Example
--------------------------------------------------------------------------------------------------------------------------------------------
-"""
 #set the parameter dictionary for the MV normal. sigma is the standard deviation
 mu_c0 = [0,0]
 mu_c1 = [3,3]
@@ -570,12 +457,85 @@ dist_parameter_dicts = [{'params_c0': {'mean': [mu_c0], 'cov': [sigma_c0]},
 ]
 
 size = [90, 10]
+"""
 
 """
 Test and Comparison Mult_Dist_Generator
 -------------------------------------------------------------------------------------------------------------------------------------------
-"""
+
 dist_gen_spec = Multi_Dist_Generator(distributions, dist_parameter_dicts, size)
+
+#dist_gen_spec.create_data()
+#spec_samples = (dist_gen_spec.X, dist_gen_spec.y)
+
+spec_samples = dist_gen_spec.prepare_data(0.2)
+
+#print(dist_fam.dist_list)
+print(spec_samples, '\n')
+
+
+
+dist_gen_sklearn = ImbalancedDataGenerator(class_ratio= 0.1, n_samples= 100, n_features=5)
+
+sklearn_samples = dist_gen_sklearn.generate_data()
+
+#print(sklearn_samples)
+"""
+
+
+
+"""
+Multiple and Multimodal Distributions: Multinormal + Beta + Exponential Example
+-------------------------------------------------------------------------------------------------------------------------------------------
+"""
+#set the parameter dictionary for the MV normal. sigma is the standard deviation
+mu_c0_1 = [0,0]
+mu_c0_2 = [2,0]
+mu_c1_1 = [3,3]
+mu_c1_2 = [1,3]
+sigma_c0_1 = np.array([[1,0],
+                       [0,3]])
+sigma_c0_2 = np.array([[1,0],
+                       [0,1]])
+sigma_c1_1 = np.array([[2,1],
+                       [1,1]])
+sigma_c1_2 = np.array([[2,1],
+                       [1,2]])
+
+
+distributions = [st.multivariate_normal, st.beta, st.expon]
+
+#set the parameter dictionaries as a list of dictionaries with parameter dictionaries for classes individually.
+dist_parameter_dicts = [{'modes_c0': 2,
+                         'modes_c1': 2,
+                         'mixing_weights_c0': [0.3, 0.7],
+                         'mixing_weights_c1': [0.3, 0.7],
+                         'params_c0': {'mean': [mu_c0_1, mu_c0_2], 'cov': [sigma_c0_1, sigma_c0_2]},
+                         'params_c1': {'mean': [mu_c1_1, mu_c1_2], 'cov': [sigma_c1_1, sigma_c1_2]}
+                         },
+                        {'modes_c0': 1,
+                         'modes_c1': 1,
+                         #'mixing_weights_c0': [],
+                         'params_c0': {'a': [2,3], 'b': [4,5]},
+                         'params_c1': {'a': [1,2], 'b': [7,8]}
+                         },
+                        {'modes_c0': 1,
+                         'modes_c1': 1,
+                         #'mixing_weights_c0': [],
+                         'params_c0': {'loc': [0], 'scale': [1]},
+                         'params_c1': {'loc': [0], 'scale': [3]}
+                         }
+]
+
+size = [90, 10]
+
+
+
+"""
+Test and Comparison Multi_Modal_Dist_Generator
+-------------------------------------------------------------------------------------------------------------------------------------------
+"""
+dist_gen_spec = Multi_Modal_Dist_Generator(distributions, dist_parameter_dicts, size)
 
 #dist_gen_spec.create_data()
 #spec_samples = (dist_gen_spec.X, dist_gen_spec.y)
