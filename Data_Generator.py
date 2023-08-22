@@ -308,13 +308,19 @@ class Multi_Modal_Dist_Generator:
         
         X_c0 = np.concatenate(self.dists_sample_lists['c0'], axis = 1)
         X_c1 = np.concatenate(self.dists_sample_lists['c1'], axis = 1)
-        print(X_c1)
+        #print(X_c1)
 
         y_c0 = np.zeros(self.sizes[0])
         y_c1 = np.ones(self.sizes[1])
 
         self.X = np.concatenate( (X_c0, X_c1), axis = 0)
         self.y = np.concatenate( (y_c0, y_c1), axis = 0)
+
+        # Generate a random permutation of indices
+        permuted_indices = np.random.permutation(len(self.X))
+
+        self.X = self.X[permuted_indices]
+        self.y = self.y[permuted_indices]
                 
 
 
@@ -366,16 +372,10 @@ class Multi_Modal_Dist_Generator:
     def prepare_data(self, test_size):
         
         self.create_data()
-        
-        # Generate a random permutation of indices
-        permuted_indices = np.random.permutation(len(self.X))
-
-        X = self.X[permuted_indices]
-        y = self.y[permuted_indices]
 
         return train_test_split(
-            X, 
-            y, 
+            self.X, 
+            self.y, 
             test_size = test_size, 
             random_state=self.random_state
             )
@@ -384,172 +384,177 @@ class Multi_Modal_Dist_Generator:
 
 
 
-"""
-Single Distribution: Multi-Normal Example
--------------------------------------------------------------------------------------------------------------------------------------------
-
-#set the parameter dictionary. sigma is the standard deviation
-mu_c1 = [0,0]
-mu_c2 = [3,3]
-sigma_c1 = np.array([[1,0],
-                     [0,3]])
-sigma_c2 = np.array([[2,1],
-                     [1,1]])
-parameters = {'mu': [mu_c1, mu_c2], 'sigma': [sigma_c1, sigma_c2]}
-
-#set the distribution
-distribution = st.multivariate_normal
-
-#set the distribution name on the graph
-distribution_name = 'Normal-Distribution Family'
-
-size = [90, 10]
-"""
-
-"""
-Test and Comparison Cont_Dist_Generator
--------------------------------------------------------------------------------------------------------------------------------------------
-
-dist_gen_spec = Cont_Dist_Generator(distributions, distribution_name, size, **parameters)
-
-#dist_gen_spec.freeze_distributions()
-spec_samples = dist_gen_spec.prepare_data(0.2)
-
-#print(dist_fam.dist_list)
-print(spec_samples, '\n')
 
 
 
-dist_gen_sklearn = ImbalancedDataGenerator(class_ratio= 0.1, n_samples= 100, n_features=2)
+if __name__ == "__main__":
+    
+    """
+    Single Distribution: Multi-Normal Example
+    -------------------------------------------------------------------------------------------------------------------------------------------
 
-sklearn_samples = dist_gen_sklearn.generate_data()
+    #set the parameter dictionary. sigma is the standard deviation
+    mu_c1 = [0,0]
+    mu_c2 = [3,3]
+    sigma_c1 = np.array([[1,0],
+                        [0,3]])
+    sigma_c2 = np.array([[2,1],
+                        [1,1]])
+    parameters = {'mu': [mu_c1, mu_c2], 'sigma': [sigma_c1, sigma_c2]}
 
-print(sklearn_samples)
-"""
+    #set the distribution
+    distribution = st.multivariate_normal
 
+    #set the distribution name on the graph
+    distribution_name = 'Normal-Distribution Family'
 
+    size = [90, 10]
+    """
 
-"""
-Multiple Distributions: Multinormal + Beta + Exponential Example
--------------------------------------------------------------------------------------------------------------------------------------------
+    """
+    Test and Comparison Cont_Dist_Generator
+    -------------------------------------------------------------------------------------------------------------------------------------------
 
-#set the parameter dictionary for the MV normal. sigma is the standard deviation
-mu_c0 = [0,0]
-mu_c1 = [3,3]
-sigma_c0 = np.array([[1,0],
-                     [0,3]])
-sigma_c1 = np.array([[2,1],
-                     [1,1]])
+    dist_gen_spec = Cont_Dist_Generator(distributions, distribution_name, size, **parameters)
 
+    #dist_gen_spec.freeze_distributions()
+    spec_samples = dist_gen_spec.prepare_data(0.2)
 
-distributions = [st.multivariate_normal, st.beta, st.expon]
-
-#set the parameter dictionaries as a list of dictionaries with parameter dictionaries for classes individually.
-dist_parameter_dicts = [{'params_c0': {'mean': [mu_c0], 'cov': [sigma_c0]},
-                         'params_c1': {'mean': [mu_c1], 'cov': [sigma_c1]}
-                         },
-                        {'params_c0': {'a': [2,3], 'b': [4,5]},
-                         'params_c1': {'a': [1,2], 'b': [7,8]}
-                         },
-                        {'params_c0': {'loc': [0], 'scale': [1]},
-                         'params_c1': {'loc': [0], 'scale': [3]}
-                         }
-]
-
-size = [90, 10]
-"""
-
-"""
-Test and Comparison Mult_Dist_Generator
--------------------------------------------------------------------------------------------------------------------------------------------
-
-dist_gen_spec = Multi_Dist_Generator(distributions, dist_parameter_dicts, size)
-
-#dist_gen_spec.create_data()
-#spec_samples = (dist_gen_spec.X, dist_gen_spec.y)
-
-spec_samples = dist_gen_spec.prepare_data(0.2)
-
-#print(dist_fam.dist_list)
-print(spec_samples, '\n')
+    #print(dist_fam.dist_list)
+    print(spec_samples, '\n')
 
 
 
-dist_gen_sklearn = ImbalancedDataGenerator(class_ratio= 0.1, n_samples= 100, n_features=5)
+    dist_gen_sklearn = ImbalancedDataGenerator(class_ratio= 0.1, n_samples= 100, n_features=2)
 
-sklearn_samples = dist_gen_sklearn.generate_data()
+    sklearn_samples = dist_gen_sklearn.generate_data()
 
-#print(sklearn_samples)
-"""
-
-
-
-"""
-Multiple and Multimodal Distributions: Multinormal + Beta + Exponential Example
--------------------------------------------------------------------------------------------------------------------------------------------
-"""
-#set the parameter dictionary for the MV normal. sigma is the standard deviation
-mu_c0_1 = [0,0]
-mu_c0_2 = [2,0]
-mu_c1_1 = [3,3]
-mu_c1_2 = [1,3]
-sigma_c0_1 = np.array([[1,0],
-                       [0,3]])
-sigma_c0_2 = np.array([[1,0],
-                       [0,1]])
-sigma_c1_1 = np.array([[2,1],
-                       [1,1]])
-sigma_c1_2 = np.array([[2,1],
-                       [1,2]])
-
-
-distributions = [st.multivariate_normal, st.beta, st.expon]
-
-#set the parameter dictionaries as a list of dictionaries with parameter dictionaries for classes individually.
-dist_parameter_dicts = [{'modes_c0': 2,
-                         'modes_c1': 2,
-                         'mixing_weights_c0': [0.3, 0.7],
-                         'mixing_weights_c1': [0.3, 0.7],
-                         'params_c0': {'mean': [mu_c0_1, mu_c0_2], 'cov': [sigma_c0_1, sigma_c0_2]},
-                         'params_c1': {'mean': [mu_c1_1, mu_c1_2], 'cov': [sigma_c1_1, sigma_c1_2]}
-                         },
-                        {'modes_c0': 1,
-                         'modes_c1': 1,
-                         #'mixing_weights_c0': [],
-                         'params_c0': {'a': [2,3], 'b': [4,5]},
-                         'params_c1': {'a': [1,2], 'b': [7,8]}
-                         },
-                        {'modes_c0': 1,
-                         'modes_c1': 1,
-                         #'mixing_weights_c0': [],
-                         'params_c0': {'loc': [0], 'scale': [1]},
-                         'params_c1': {'loc': [0], 'scale': [3]}
-                         }
-]
-
-size = [90, 10]
+    print(sklearn_samples)
+    """
 
 
 
-"""
-Test and Comparison Multi_Modal_Dist_Generator
--------------------------------------------------------------------------------------------------------------------------------------------
-"""
-dist_gen_spec = Multi_Modal_Dist_Generator(distributions, dist_parameter_dicts, size)
+    """
+    Multiple Distributions: Multinormal + Beta + Exponential Example
+    -------------------------------------------------------------------------------------------------------------------------------------------
 
-#dist_gen_spec.create_data()
-#spec_samples = (dist_gen_spec.X, dist_gen_spec.y)
-
-spec_samples = dist_gen_spec.prepare_data(0.2)
-
-#print(dist_fam.dist_list)
-print(spec_samples, '\n')
+    #set the parameter dictionary for the MV normal. sigma is the standard deviation
+    mu_c0 = [0,0]
+    mu_c1 = [3,3]
+    sigma_c0 = np.array([[1,0],
+                        [0,3]])
+    sigma_c1 = np.array([[2,1],
+                        [1,1]])
 
 
+    distributions = [st.multivariate_normal, st.beta, st.expon]
 
-dist_gen_sklearn = ImbalancedDataGenerator(class_ratio= 0.1, n_samples= 100, n_features=5)
+    #set the parameter dictionaries as a list of dictionaries with parameter dictionaries for classes individually.
+    dist_parameter_dicts = [{'params_c0': {'mean': [mu_c0], 'cov': [sigma_c0]},
+                            'params_c1': {'mean': [mu_c1], 'cov': [sigma_c1]}
+                            },
+                            {'params_c0': {'a': [2,3], 'b': [4,5]},
+                            'params_c1': {'a': [1,2], 'b': [7,8]}
+                            },
+                            {'params_c0': {'loc': [0], 'scale': [1]},
+                            'params_c1': {'loc': [0], 'scale': [3]}
+                            }
+    ]
 
-sklearn_samples = dist_gen_sklearn.generate_data()
+    size = [90, 10]
+    """
 
-#print(sklearn_samples)
+    """
+    Test and Comparison Mult_Dist_Generator
+    -------------------------------------------------------------------------------------------------------------------------------------------
+
+    dist_gen_spec = Multi_Dist_Generator(distributions, dist_parameter_dicts, size)
+
+    #dist_gen_spec.create_data()
+    #spec_samples = (dist_gen_spec.X, dist_gen_spec.y)
+
+    spec_samples = dist_gen_spec.prepare_data(0.2)
+
+    #print(dist_fam.dist_list)
+    print(spec_samples, '\n')
+
+
+
+    dist_gen_sklearn = ImbalancedDataGenerator(class_ratio= 0.1, n_samples= 100, n_features=5)
+
+    sklearn_samples = dist_gen_sklearn.generate_data()
+
+    #print(sklearn_samples)
+    """
+
+
+
+    """
+    Multiple and Multimodal Distributions: Multinormal + Beta + Exponential Example
+    -------------------------------------------------------------------------------------------------------------------------------------------
+    """
+    #set the parameter dictionary for the MV normal. sigma is the standard deviation
+    mu_c0_1 = [0,0]
+    mu_c0_2 = [2,0]
+    mu_c1_1 = [3,3]
+    mu_c1_2 = [1,3]
+    sigma_c0_1 = np.array([[1,0],
+                           [0,3]])
+    sigma_c0_2 = np.array([[1,0],
+                           [0,1]])
+    sigma_c1_1 = np.array([[2,1],
+                           [1,1]])
+    sigma_c1_2 = np.array([[2,1],
+                           [1,2]])
+
+
+    distributions = [st.multivariate_normal, st.beta, st.expon]
+
+    #set the parameter dictionaries as a list of dictionaries with parameter dictionaries for classes individually.
+    dist_parameter_dicts = [{'modes_c0': 2,
+                            'modes_c1': 1,
+                            'mixing_weights_c0': [0.3, 0.7],
+                            'mixing_weights_c1': [0.3, 0.7],
+                            'params_c0': {'mean': [mu_c0_1, mu_c0_2], 'cov': [sigma_c0_1, sigma_c0_2]},
+                            'params_c1': {'mean': [mu_c1_1], 'cov': [sigma_c1_1]}
+                            },
+                            {'modes_c0': 1,
+                            'modes_c1': 1,
+                            #'mixing_weights_c0': [],
+                            'params_c0': {'a': [2,3], 'b': [4,5]},
+                            'params_c1': {'a': [1,2], 'b': [7,8]}
+                            },
+                            {'modes_c0': 1,
+                            'modes_c1': 1,
+                            #'mixing_weights_c0': [],
+                            'params_c0': {'loc': [0], 'scale': [1]},
+                            'params_c1': {'loc': [0], 'scale': [3]}
+                            }
+    ]
+
+    size = [90, 10]
+
+
+
+    """
+    Test and Comparison Multi_Modal_Dist_Generator
+    -------------------------------------------------------------------------------------------------------------------------------------------
+    """
+    dist_gen_spec = Multi_Modal_Dist_Generator(distributions, dist_parameter_dicts, size)
+
+    #dist_gen_spec.create_data()
+    #spec_samples = (dist_gen_spec.X, dist_gen_spec.y)
+
+    spec_samples = dist_gen_spec.prepare_data(0.2)
+
+    #print(dist_fam.dist_list)
+    print(spec_samples, '\n')
+
+
+
+    dist_gen_sklearn = ImbalancedDataGenerator(class_ratio= 0.1, n_samples= 100, n_features=5)
+
+    sklearn_samples = dist_gen_sklearn.generate_data()
+
+    #print(sklearn_samples)
 
