@@ -30,7 +30,7 @@ class Visualiser:
         df = pd.DataFrame({'Feature 1': x1, 'Feature 2': x2, 'Class': self.y})
 
         # Map class labels to more descriptive names
-        class_labels = {0: 'Minority Class', 1: 'Majority Class'}
+        class_labels = {0: 'Majority Class', 1: 'Minority Class'}
         df['Class'] = df['Class'].map(class_labels)
 
         # Create the scatter plot using Plotly
@@ -143,7 +143,7 @@ if __name__ == "__main__":
     """
     Multiple and Multimodal Distributions: Multinormal + Beta + Exponential Example
     -------------------------------------------------------------------------------------------------------------------------------------------
-    """
+    
     #set the parameter dictionary for the MV normal. sigma is the standard deviation
     mu_c0_1 = [0,0]
     mu_c0_2 = [4,0]
@@ -184,6 +184,53 @@ if __name__ == "__main__":
     ]
 
     size = [9000, 1000]
+    """
+
+
+    """
+    Large Normal
+    -------------------------------------------------------------------------------------------------------------------------------------------
+    """
+    n = 3
+    #set the parameter dictionary for the MV normal. sigma is the standard deviation
+    mu_c0_1 = np.zeros(shape = (n))
+    mu_c0_2 = 3 * np.ones(shape = (n))
+    mu_c1 = [2, -2, 2, -2, 2, -2, 2, -2, 2, -2]
+
+    sigma_c0_1 = np.ones(shape=(n,n)) + np.diag(np.ones(shape = (n)))
+    sigma_c0_2 = np.zeros(shape=(n,n)) + np.diag(np.ones(shape = (n)))
+    sigma_c1 = np.array([[3, 0, 1, 0, 1, 0, 0, 0, -1, -1],
+                         [0, 3, 1, 0, 0, 0, 1, 0, 0, -1],
+                         [1, 1, 3, 0, 1, 0, 0, 0, 1, 0],
+                         [0, 0, 0, 3, 0, 0, 1, 0, 0, 0],
+                         [1, 0, 1, 0, 3, 0, 0, 0, 1, 0],
+                         [0, 0, 0, 0, 0, 3, 1, 0, 0, 0],
+                         [0, 1, 0, 1, 0, 1, 3, 0, 1, 0],
+                         [0, 0, 0, 0, 0, 0, 0, 3, 0, 1],
+                         [-1, 0, 1, 0, 1, 0, 1, 0, 3, 1],
+                         [-1, -1, 0, 0, 0, 0, 0, 1, 1, 3]])
+
+    #print(np.allclose(sigma_c1, sigma_c1.T))
+    #print(np.linalg.eigvals(sigma_c1))
+
+    mu_c1 = mu_c1[:n]
+    sigma_c1 = sigma_c1[ :n, :n]
+    print(sigma_c1)
+
+    distributions = [st.multivariate_normal]
+
+    #set the parameter dictionaries as a list of dictionaries with parameter dictionaries for classes individually.
+    dist_parameter_dicts = [{'modes_c0': 2,
+                            'modes_c1': 1,
+                            'mixing_weights_c0': [0.3, 0.7],
+                            'mixing_weights_c1': [0.3, 0.7],
+                            'params_c0': {'mean': [mu_c0_1, mu_c0_2], 'cov': [sigma_c0_1, sigma_c0_2]},
+                            'params_c1': {'mean': [mu_c1], 'cov': [sigma_c1]}
+                            },
+    ]
+
+    size = [9000, 1000]
+
 
 
     """
@@ -199,5 +246,5 @@ if __name__ == "__main__":
 
     visualiser = Visualiser(spec_samples)
 
-    visualiser.plot_2d_scatter(0,2)
-    #visualiser.plot_3d_scatter(0,1,2)
+    visualiser.plot_2d_scatter(0,n-1)
+    visualiser.plot_3d_scatter(0,1,2)
