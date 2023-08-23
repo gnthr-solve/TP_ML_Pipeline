@@ -6,28 +6,21 @@ import plotly.graph_objects as go
 
 
 class Visualiser:
-    def __init__(self, 
-                 samples = None
-                ):
-        """
-        Initialize the Visualiser.
 
-        Parameters:
-        - samples (np.array): The samples to be plotted.
-        """
-        #self.samples = samples
-        self.X = samples[0]
-        self.y = samples[1]
-    
+    def __init__(self, **params):
+        self.params = params
 
-    def plot_2d_scatter(self, feature1: int, feature2: int):
 
+    def plot_2d_scatter(self, samples, feature1: int, feature2: int):
+
+        X = samples[0]
+        y = samples[1]
         # Select the first two features for plotting
-        x1 = self.X[:, feature1]
-        x2 = self.X[:, feature2]
+        x1 = X[:, feature1]
+        x2 = X[:, feature2]
 
         # Create a DataFrame for plotting
-        df = pd.DataFrame({'Feature 1': x1, 'Feature 2': x2, 'Class': self.y})
+        df = pd.DataFrame({'Feature 1': x1, 'Feature 2': x2, 'Class': y})
 
         # Map class labels to more descriptive names
         class_labels = {0: 'Majority Class', 1: 'Minority Class'}
@@ -49,17 +42,20 @@ class Visualiser:
         #return fig
     
 
-    def plot_3d_scatter(self, feature_x: int, feature_y: int, feature_z: int):
+    def plot_3d_scatter(self, samples, feature_x: int, feature_y: int, feature_z: int):
 
-        x = self.X[:, feature_x]
-        y = self.X[:, feature_y]
-        z = self.X[:, feature_z]
+        X = samples[0]
+        y = samples[1]
+
+        x1 = X[:, feature_x]
+        x2 = X[:, feature_y]
+        x3 = X[:, feature_z]
         #print(x[:20])
         #print(y[:20])
         #print(z[:20])
 
         # Create a DataFrame for plotting
-        df = pd.DataFrame({'Feature 1': x, 'Feature 2': y, 'Feature 3': z, 'Class': self.y})
+        df = pd.DataFrame({'Feature 1': x1, 'Feature 2': x2, 'Feature 3': x3, 'Class': y})
 
         # Map class labels to more descriptive names
         class_labels = {1: 'Minority Class', 0: 'Majority Class'}
@@ -71,7 +67,7 @@ class Visualiser:
             y = 'Feature 2',
             z = 'Feature 3',
             color='Class',
-            size = 5* np.ones(len(self.X)),
+            size = 5* np.ones(len(X)),
             size_max = 15,
             opacity = 0.9,
             width = 1400,
@@ -243,7 +239,7 @@ if __name__ == "__main__":
     spec_samples = (dist_gen_spec.X, dist_gen_spec.y)
     #spec_samples = dist_gen_spec.prepare_data(0.2)
 
-    visualiser = Visualiser(spec_samples)
+    visualiser = Visualiser()
 
-    visualiser.plot_2d_scatter(0, n-1)
-    visualiser.plot_3d_scatter(0,1,2)
+    visualiser.plot_2d_scatter(spec_samples, 0, n-1)
+    visualiser.plot_3d_scatter(spec_samples, 0, 1, 2)

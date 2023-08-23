@@ -19,10 +19,12 @@ class DataBalancer:
 
 if __name__=="__main__":
 
+    from loguru import logger
     from imblearn.over_sampling import ADASYN,RandomOverSampler,KMeansSMOTE,SMOTE,BorderlineSMOTE,SVMSMOTE,SMOTENC, RandomOverSampler
     from Data_Generator import Multi_Modal_Dist_Generator
     from Visualiser import Visualiser
     from parameters import mixed_3d_test_dict
+
 
     balancing_methods = {
     "ADASYN": ADASYN,
@@ -37,7 +39,7 @@ if __name__=="__main__":
     data_generator = Multi_Modal_Dist_Generator(**mixed_3d_test_dict)
     X_train, X_test, y_train, y_test = data_generator.prepare_data(0.2)
 
-    unbalanced_visualiser = Visualiser((X_train, y_train))
+    visualiser = Visualiser()
 
     method = "SMOTE"
     balancing_method = balancing_methods[method](sampling_strategy='auto', random_state=123)
@@ -45,17 +47,16 @@ if __name__=="__main__":
 
     X_train_balanced, y_train_balanced = data_balancer.balance_data(X_train, y_train)
 
-    balanced_visualiser = Visualiser((X_train_balanced, y_train_balanced))
 
-    print('Original x-data: \n', X_train, '\n',
-          'Original y-data: \n', y_train, '\n',
+    print('Original x-data: \n', X_train[-20:], '\n',
+          'Original y-data: \n', y_train[-20:], '\n',
           'Original size: \n', len(X_train), '\n')
     
-    print('Balanced x-data: \n', X_train_balanced, '\n',
-          'Balanced y-data: \n', y_train_balanced, '\n',
+    print('Balanced x-data: \n', X_train_balanced[-20:], '\n',
+          'Balanced y-data: \n', y_train_balanced[-20:], '\n',
           'Balanced size: \n', len(X_train_balanced), '\n')
 
-    unbalanced_visualiser.plot_2d_scatter(0, 1)
-    unbalanced_visualiser.plot_3d_scatter(0,1,2)
-    balanced_visualiser.plot_2d_scatter(0, 1)
-    balanced_visualiser.plot_3d_scatter(0,1,2)
+    visualiser.plot_2d_scatter((X_train, y_train),0, 1)
+    visualiser.plot_3d_scatter((X_train, y_train),0,1,2)
+    visualiser.plot_2d_scatter((X_train_balanced, y_train_balanced),0, 1)
+    visualiser.plot_3d_scatter((X_train_balanced, y_train_balanced),0,1,2)
