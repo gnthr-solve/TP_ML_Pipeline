@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 import scipy.stats as st
 import scipy.special as sp
-import numpy.random as rnd
 import plotly.express as px
 from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
@@ -556,5 +555,5 @@ if __name__ == "__main__":
 
     sklearn_samples = dist_gen_sklearn.generate_data()
 
-    #print(sklearn_samples)
+    print(sklearn_samples)
 

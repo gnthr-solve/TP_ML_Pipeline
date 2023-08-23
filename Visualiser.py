@@ -230,8 +230,7 @@ if __name__ == "__main__":
     ]
 
     size = [9000, 1000]
-
-
+    
 
     """
     Visualise
@@ -246,5 +245,5 @@ if __name__ == "__main__":
 
     visualiser = Visualiser(spec_samples)
 
-    visualiser.plot_2d_scatter(0,n-1)
+    visualiser.plot_2d_scatter(0, n-1)
     visualiser.plot_3d_scatter(0,1,2)
