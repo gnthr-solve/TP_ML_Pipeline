@@ -130,6 +130,11 @@ class Visualiser:
 
 
 
+
+
+
+
+
 if __name__ == "__main__":
 
     import scipy.stats as st

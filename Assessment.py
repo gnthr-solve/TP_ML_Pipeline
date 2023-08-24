@@ -9,11 +9,10 @@ from sklearn.naive_bayes import GaussianNB
 from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
 import sys
-#sys.path.append("C:/Users/Artemii/Desktop/teamproject/TP_ML_Pipeline/study")
 from Data_Generator import ImbalancedDataGenerator
 from Data_Balancer import DataBalancer
 from Classifier import Classifier
-from Assessor import Study
+from Assessors import Study
 
 
 balancing_methods = {
@@ -45,8 +44,16 @@ results_imbalanced = pd.DataFrame()
 for class_ratio in class_ratio_list:
     for n_samples in n_samples_list:
         for n_features in n_features_list:
+
+            data_generator = ImbalancedDataGenerator(class_ratio=class_ratio, n_samples=int(n_samples), n_features=n_features, distance=1, flip_y=0.1)
+
             for method in balancing_methods:
+
+                balancing_method = balancing_methods[method](sampling_strategy='auto', random_state=123)
+                data_balancer = DataBalancer(balancer=balancing_method)
+                
                 for classifier in classifiers:
+
                     meta_df = pd.DataFrame({
                         "class_ratio": class_ratio, 
                         "n_samples": n_samples, 
@@ -54,12 +61,12 @@ for class_ratio in class_ratio_list:
                         "balancing_method": method, 
                         "classifier": classifier
                     }, index=[0])
+
                     logger.info(f"""({class_ratio},{int(n_samples)}) | {n_features} | {method} | {classifier}""")
-                    data_generator = ImbalancedDataGenerator(class_ratio=class_ratio, n_samples=int(n_samples), n_features=n_features, distance=1, flip_y=0.1)
+                    
                     classification_method = classifiers[classifier](random_state=123)
                     data_classifier = Classifier(classifier=classification_method)
-                    balancing_method = balancing_methods[method](sampling_strategy='auto', random_state=123)
-                    data_balancer = DataBalancer(balancer=balancing_method)
+                    
 
                     study = Study(
                         data_generator=data_generator,
@@ -67,7 +74,7 @@ for class_ratio in class_ratio_list:
                         data_classifier=data_classifier
                     )
                     study.run()
-                    results = study.calculatete_matrics()
+                    results = study.calculate_metrics()
                     
                     results_imbalanced = pd.concat(
                         [

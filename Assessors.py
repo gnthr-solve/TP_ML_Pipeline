@@ -1,4 +1,5 @@
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
+from parameters import default_test_dict
 import numpy as np
 
 
@@ -27,7 +28,7 @@ class Study():
         self.data_classifier.fit(self.X_train_balanced, self.y_train_balanced)
         self.y_predicted_balanced = self.data_classifier.predict(X_test)
         
-    def calculatete_matrics(self):
+    def calculate_metrics(self):
         imbalanced_results = {
             "accuracy": accuracy_score(self.y_test,self.y_predicted_no_balancing),
             "precision": precision_score(self.y_test,self.y_predicted_no_balancing), 
@@ -58,18 +59,18 @@ class Study():
 class Assessor():
 
     def __init__(self, 
-                 data_generator=None, 
-                 data_balancer=None,
-                 data_classifier=None
+                 generation_dict = default_test_dict, 
+                 balancing_dict = None,
+                 classification_dict = None,
+                 metrics = None
                  ):
-        self.data_generator = data_generator
-        self.data_balancer = data_balancer
-        self.data_classifier = data_classifier
-        self.results = {
-            "no balancing": None,
-            "balanced": None
-        }
+        self.generation_dict = generation_dict
+        self.balancing_dict = balancing_dict
+        self.classification_dict = classification_dict
+        self.results = {}
     
+    def generate(self):
+        pass
 
     def run(self):
         X_train, X_test, y_train, y_test = self.data_generator.generate_data()
