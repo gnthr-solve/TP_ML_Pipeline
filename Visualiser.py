@@ -42,6 +42,64 @@ class Visualiser:
         #return fig
     
 
+    def plot_2d_scatter_multiple_datasets(datasets, feature1=0, feature2=1, title="2D Scatter Plot", color_sequence=None):
+        """
+        Create a 2D scatter plot for multiple datasets.
+
+        Args:
+            datasets (list of tuple): List of tuples, where each tuple contains a dataset (X, y) and a label.
+            feature1 (int): Index of the first feature to plot (default is 0).
+            feature2 (int): Index of the second feature to plot (default is 1).
+            title (str): Title of the plot (default is "2D Scatter Plot").
+            color_sequence (list): List of colors for dataset labels (default is None,
+                                which uses Plotly's default color sequence).
+
+        Returns:
+            None (displays the plot).
+        """
+
+        # Create the scatter plot using Plotly
+        if color_sequence is None:
+            color_sequence = px.colors.qualitative.Plotly
+
+        fig = go.Figure()
+
+        for i, (X, y, label) in enumerate(datasets):
+            # Select the two features for plotting
+            x1 = X[:, feature1]
+            x2 = X[:, feature2]
+
+            # Map class labels to more descriptive names
+            class_labels = {val: f'{label} - Class {val}' for val in np.unique(y)}
+
+            df = pd.DataFrame({'Feature 1': x1, 'Feature 2': x2, 'Class': y})
+            df['Class'] = df['Class'].map(class_labels)
+
+            for class_val in np.unique(y):
+                data = df[df['Class'] == f'{label} - Class {class_val}']
+                fig.add_trace(go.Scatter(
+                    x=data['Feature 1'],
+                    y=data['Feature 2'],
+                    mode='markers',
+                    name=f'{label} - Class {class_val}',
+                    marker=dict(
+                        size=8,
+                        opacity=0.7,
+                        color=color_sequence[i % len(color_sequence)],
+                    )
+                ))
+
+        fig.update_layout(
+            title=title,
+            xaxis_title=f'Feature {feature1}',
+            yaxis_title=f'Feature {feature2}',
+            legend=dict(x=0.85, y=1.0),
+        )
+
+        fig.show()
+
+
+
     def plot_3d_scatter(self, samples, feature_x: int, feature_y: int, feature_z: int):
 
         X = samples[0]
@@ -142,56 +200,9 @@ if __name__ == "__main__":
     
 
     """
-    Multiple and Multimodal Distributions: Multinormal + Beta + Exponential Example
-    -------------------------------------------------------------------------------------------------------------------------------------------
-    
-    #set the parameter dictionary for the MV normal. sigma is the standard deviation
-    mu_c0_1 = [0,0]
-    mu_c0_2 = [4,0]
-    mu_c1_1 = [3,3]
-    mu_c1_2 = [1,3]
-    sigma_c0_1 = np.array([[1,0],
-                           [0,1]])
-    sigma_c0_2 = np.array([[1,0],
-                           [0,2]])
-    sigma_c1_1 = np.array([[2,1],
-                           [1,2]])
-    sigma_c1_2 = np.array([[2,1],
-                           [1,2]])
-
-
-    distributions = [st.multivariate_normal, st.beta, st.expon]
-
-    #set the parameter dictionaries as a list of dictionaries with parameter dictionaries for classes individually.
-    dist_parameter_dicts = [{'modes_c0': 2,
-                            'modes_c1': 1,
-                            'mixing_weights_c0': [0.3, 0.7],
-                            'mixing_weights_c1': [0.3, 0.7],
-                            'params_c0': {'mean': [mu_c0_1, mu_c0_2], 'cov': [sigma_c0_1, sigma_c0_2]},
-                            'params_c1': {'mean': [mu_c1_1], 'cov': [sigma_c1_1]}
-                            },
-                            {'modes_c0': 1,
-                            'modes_c1': 1,
-                            #'mixing_weights_c0': [],
-                            'params_c0': {'a': [2,3], 'b': [4,5]},
-                            'params_c1': {'a': [1,2], 'b': [7,8]}
-                            },
-                            {'modes_c0': 1,
-                            'modes_c1': 1,
-                            #'mixing_weights_c0': [],
-                            'params_c0': {'loc': [0], 'scale': [1]},
-                            'params_c1': {'loc': [0], 'scale': [3]}
-                            }
-    ]
-
-    size = [9000, 1000]
-    """
-
-
-    """
     Large Normal
     -------------------------------------------------------------------------------------------------------------------------------------------
-    """
+    
     n = 3
     #set the parameter dictionary for the MV normal. sigma is the standard deviation
     mu_c0_1 = np.zeros(shape = (n))
@@ -231,12 +242,12 @@ if __name__ == "__main__":
     ]
 
     size = [9000, 1000]
-    
+    """
 
     """
     Visualise
     -------------------------------------------------------------------------------------------------------------------------------------------
-    """
+    
     dist_gen_spec = Multi_Modal_Dist_Generator(distributions, dist_parameter_dicts, size)
 
 
@@ -248,3 +259,15 @@ if __name__ == "__main__":
 
     visualiser.plot_2d_scatter(spec_samples, 0, n-1)
     visualiser.plot_3d_scatter(spec_samples, 0, 1, 2)
+    """
+
+
+    """
+    Plotly Experiments
+    -------------------------------------------------------------------------------------------------------------------------------------------
+    """
+    df = px.data.iris()
+    print(df)
+    fig = px.scatter(df, x="sepal_width", y="sepal_length", color="species", symbol="species")
+    
+    fig.show()

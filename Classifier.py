@@ -29,6 +29,7 @@ class Classifier(BaseEstimator, ClassifierMixin):
 
 if __name__=="__main__":
 
+    import pandas as pd
     from loguru import logger
     #from imblearn.over_sampling import ADASYN,RandomOverSampler,KMeansSMOTE,SMOTE,BorderlineSMOTE,SVMSMOTE,SMOTENC, RandomOverSampler
     from Data_Generator import Multi_Modal_Dist_Generator
@@ -48,18 +49,35 @@ if __name__=="__main__":
 
     visualiser = Visualiser()
 
-
+    classifiers = {
+    "Logistic Regression": LogisticRegression,
+    #"Decision Tree": DecisionTreeClassifier,
+    #"Random Forest": RandomForestClassifier,
+    #"SVC": SVC,
+    #"Naive Bayes": GaussianNB,
+    #"XGboost": XGBClassifier,
+    #"Lightgbm": LGBMClassifier
+    }
     """
     Classifier Test Case
     -------------------------------------------------------------------------------------------------------------------------------------------
     """
 
     # Initialize the classifier, e.g., Support Vector Machine (SVC)
-    classifier = SVC(random_state=42)
+    classifier = LogisticRegression(random_state=42)
     model = Classifier(classifier=classifier)
 
     # Fit the model on the data
-    #model.fit(X, y)
+    model.fit(X_train, y_train)
 
     # Make predictions
-    #predictions = model.predict(X_test)
+    predictions = model.predict(X_test)
+    '''
+    # Create a DataFrame for plotting
+    df = pd.DataFrame({'Test Data X': x1, 'Feature 2': x2, 'Feature 3': x3, 'Class': y})
+
+    # Map class labels to more descriptive names
+    class_labels = {1: 'Minority Class', 0: 'Majority Class'}
+    df['Class'] = df['Class'].map(class_labels)
+    '''
+    print(predictions)

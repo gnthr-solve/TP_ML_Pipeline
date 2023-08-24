@@ -34,6 +34,7 @@ class IterDataBalancer:
 
 if __name__=="__main__":
 
+    import pandas as pd
     from loguru import logger
     from imblearn.over_sampling import ADASYN,RandomOverSampler,KMeansSMOTE,SMOTE,BorderlineSMOTE,SVMSMOTE,SMOTENC, RandomOverSampler
     from Data_Generator import Multi_Modal_Dist_Generator
@@ -98,12 +99,20 @@ if __name__=="__main__":
           #'Original y-data: \n', y_train[-20:], '\n',
           'Original size: \n', len(X_train), '\n')
     
-    visualiser.plot_2d_scatter((X_train, y_train),0, 1)
+    #visualiser.plot_2d_scatter((X_train, y_train),0, 1)
 
-    for data_set in balanced_data:
+    for data in balanced_data:
 
-        print(#'Balanced x-data: \n', data_set[0][-20:], '\n',
-              #'Balanced y-data: \n', data_set[1][-20:], '\n',
-              'Balanced size: \n', len(data_set[0]), '\n')
+        print(#'Balanced x-data: \n', data[0][-20:], '\n',
+              #'Balanced y-data: \n', data[1][-20:], '\n',
+              'Balanced size: \n', len(data[0]), '\n')
         
-        visualiser.plot_2d_scatter((data_set[0], data_set[1]),0, 1)
+        equal_mask = X_train == data[0]
+        
+        datasets = [
+            (X_train, y_train, 'Train'),
+            (data[0], data[1], 'Balanced Train')
+        ]
+
+        #visualiser.plot_2d_scatter((data[0], data[1]),0, 1)
+        visualiser.plot_2d_scatter_multiple_datasets
