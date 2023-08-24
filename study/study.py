@@ -1,5 +1,5 @@
 import sys
-sys.path.append("C:/Users/Artemii/Desktop/teamproject/TP_ML_Pipeline/study")
+sys.path.append("C:\\Users\\Utente\\Documents\\CORSI CMS\\SEMESTER 2\\TEAM PROJECT\\Team project Pipeline\\TP_ML_Pipeline\\study")
 from generator import ImbalancedDataGenerator
 from balancer import DataBalancer
 from classifier import Classifier
