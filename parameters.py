@@ -55,7 +55,7 @@ dist_parameter_dicts = [{'modes_c0': 2,
                         }
 ]
 
-sizes = [90, 10]
+sizes = [900, 100]
 
 mixed_3d_test_dict = {'distributions': distributions,
                       'params_dict_list': dist_parameter_dicts,
