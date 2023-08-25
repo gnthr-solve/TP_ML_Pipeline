@@ -25,8 +25,11 @@ class IterDataBalancer:
         balanced_data = []
 
         for balancer in self.balancers:
-        
-            balanced_data.append(balancer.fit_resample(X, y))
+            
+            if balancer == None:
+                balanced_data.append((X,y))
+            else:
+                balanced_data.append(balancer.fit_resample(X, y))
         
         return balanced_data
 
@@ -44,10 +47,11 @@ if __name__=="__main__":
 
 
     balancing_methods = {
+    "Unbalanced": None,
     "ADASYN": ADASYN,
-    "RandomOverSampler": RandomOverSampler,
+    #"RandomOverSampler": RandomOverSampler,
     "KMeansSMOTE": KMeansSMOTE,
-    "SMOTE": SMOTE,
+    #"SMOTE": SMOTE,
     "BorderlineSMOTE": BorderlineSMOTE,
     #"SVMSMOTE": SVMSMOTE,
     #"SMOTENC": SMOTENC,
@@ -88,7 +92,8 @@ if __name__=="__main__":
     IterDataBalancer Test Case
     -------------------------------------------------------------------------------------------------------------------------------------------
     """
-    balancers = [method(sampling_strategy='auto', random_state=123)
+    balancers = [method(sampling_strategy='auto', random_state=123) 
+                 if method != None else method
                  for name, method in balancing_methods.items()]
     
     iter_data_balancer = IterDataBalancer(balancers = balancers)

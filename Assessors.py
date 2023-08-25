@@ -56,41 +56,33 @@ class Study():
 
 
 
-class Assessor():
+class IterAssessor():
 
     def __init__(self, 
-                 generation_dict = default_test_dict, 
-                 balancing_dict = None,
-                 classification_dict = None,
+                 data_generator = None, 
+                 data_balancer = None,
+                 data_classifier = None,
                  metrics = None
                  ):
-        self.generation_dict = generation_dict
-        self.balancing_dict = balancing_dict
-        self.classification_dict = classification_dict
-        self.results = {}
+        self.data_generator = data_generator
+        self.data_balancer = data_balancer
+        self.data_classifier = data_classifier
     
-    def generate(self):
-        pass
+        self.results = {}
+
 
     def run(self):
+
         X_train, X_test, y_train, y_test = self.data_generator.generate_data()
         self.y_test = y_test
-        self.data_classifier.fit(X_train, y_train)
-        self.y_predicted_no_balancing = self.data_classifier.predict(X_test)
-        self.X_train_balanced, self.y_train_balanced = self.data_balancer.balance_data(X_train, y_train)
+
+        self.balanced_data = self.data_balancer.balance_data(X_train, y_train)
         self.data_classifier.fit(self.X_train_balanced, self.y_train_balanced)
-        self.y_predicted_balanced = self.data_classifier.predict(X_test)
+        self.predictions_list_balanced = self.data_classifier.predict(X_test)
 
 
     def calculate_metrics(self):
-        imbalanced_results = {
-            "accuracy": accuracy_score(self.y_test,self.y_predicted_no_balancing),
-            "precision": precision_score(self.y_test,self.y_predicted_no_balancing), 
-            "recall":  recall_score(self.y_test,self.y_predicted_no_balancing),
-            "F1 score": f1_score(self.y_test,self.y_predicted_no_balancing),
-            "ROC AUC Score": roc_auc_score(self.y_test,self.y_predicted_no_balancing), 
-            #"Confusion Matrix": confusion_matrix(self.y_test,self.y_predicted_no_balancing)
-        }
+
         balanced_results = {
             "accuracy": accuracy_score(self.y_test,self.y_predicted_balanced),
             "precision": precision_score(self.y_test,self.y_predicted_balanced), 
@@ -101,9 +93,9 @@ class Assessor():
         }
         
         return {
-            "imbalanced_results": imbalanced_results,
             "balanced_results": balanced_results
         }
+
 
 
 
