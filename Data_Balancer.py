@@ -34,6 +34,7 @@ class IterDataBalancer:
 
 if __name__=="__main__":
 
+    import numpy as np
     import pandas as pd
     from loguru import logger
     from imblearn.over_sampling import ADASYN,RandomOverSampler,KMeansSMOTE,SMOTE,BorderlineSMOTE,SVMSMOTE,SMOTENC, RandomOverSampler
@@ -101,18 +102,26 @@ if __name__=="__main__":
     
     #visualiser.plot_2d_scatter((X_train, y_train),0, 1)
 
-    for data in balanced_data:
+    for ind, data in enumerate(balanced_data):
 
         print(#'Balanced x-data: \n', data[0][-20:], '\n',
               #'Balanced y-data: \n', data[1][-20:], '\n',
-              'Balanced size: \n', len(data[0]), '\n')
+              #'Balanced size: \n', len(data[0]), '\n'
+              )
         
-        equal_mask = X_train == data[0]
+        common_data = np.isin(data[0], X_train)
+        row_mask = np.all(common_data, axis = 1)
         
+        only_balance_X = data[0][~row_mask]
+        only_balance_y = data[1][~row_mask]
+
         datasets = [
             (X_train, y_train, 'Train'),
-            (data[0], data[1], 'Balanced Train')
+            (only_balance_X, only_balance_y, 'Balanced Train')
         ]
 
         #visualiser.plot_2d_scatter((data[0], data[1]),0, 1)
-        visualiser.plot_2d_scatter_multiple_datasets
+        visualiser.plot_2d_scatter_multiple_datasets_px(datasets, 
+                                                     feature1 = 0, 
+                                                     feature2 = 1, 
+                                                     title = f'Scatter of {balancers[ind]}-balanced Data')
