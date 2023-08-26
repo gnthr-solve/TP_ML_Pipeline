@@ -48,6 +48,44 @@ class IterClassifier():
 
 
 
+class DictIterClassifier:
+
+    def __init__(self, classifiers_dict = {}, classifier_params = {'random_state': 42}):
+
+        classifier_list = [(name, classifier) for name, classifier in classifiers_dict.items()]
+
+        if not isinstance(classifier_params, list):
+            self.classifier_params = [classifier_params for _ in range(len(classifier_list))]
+        else:
+            self.classifier_params = classifier_params
+
+        self.classifier_list = [(name, classifier(**params)) 
+                                for (name, classifier), params in zip(classifier_list, self.classifier_params)]
+
+
+    def fit(self, X, y):
+
+        if self.classifier_list is []:
+            raise ValueError("Classifier is not provided. Please initialize the classifier.")
+        
+        self.classifiers_list = [(name, classifier.fit(X, y)) for name, classifier in self.classifier_list]
+        return self
+
+
+    def predict(self, X):
+
+        if self.classifier_list is []:
+            raise ValueError("Classifier is not provided. Please initialize the classifier.")
+        
+        return [(name, classifier.predict(X)) for name, classifier in self.classifier_list]
+    
+
+    
+
+
+
+
+
 if __name__=="__main__":
 
     import pandas as pd
@@ -123,7 +161,7 @@ if __name__=="__main__":
     """
     IterClassifier Test Case
     -------------------------------------------------------------------------------------------------------------------------------------------
-    """
+    
     # Initialize the classifiers, e.g., Support Vector Machine (SVC)
     classifiers = [(name, classifier(random_state = 42))
                    for name, classifier in classifiers_dict.items()]
@@ -160,4 +198,47 @@ if __name__=="__main__":
                                                         feature2 = 1,
                                                         feature3 = 2,
                                                         title = f'3d Scatter of {classifiers[i][0]} Predictions')
+        #print(predictions)
+
+    """
+
+
+
+    """
+    DictIterClassifier Test Case
+    -------------------------------------------------------------------------------------------------------------------------------------------
+    """
+    
+    dict_iter_classifier = DictIterClassifier(classifiers_dict = classifiers_dict)
+    # Fit the model on the data
+    dict_iter_classifier.fit(X_train, y_train)
+
+    # Make predictions
+    predictions_list = dict_iter_classifier.predict(X_test)
+    #print(predictions_list)
+
+
+    for name, predictions in predictions_list:
+        correct_mask = (predictions == y_test)
+
+        correct_predictions = predictions[correct_mask]
+        incorrect_predictions = predictions[~correct_mask]
+        #print(correct_predictions)
+        #print(incorrect_predictions)
+
+        datasets = [
+                (X_test[correct_mask], correct_predictions, 'Correctly assigned'),
+                (X_test[~correct_mask], incorrect_predictions, 'Incorrectly assigned')
+            ]
+        
+        visualiser.plot_2d_scatter_multiple_datasets_px(datasets, 
+                                                        feature1 = 0, 
+                                                        feature2 = 2, 
+                                                        title = f'Scatter of {name} Predictions')
+        
+        visualiser.plot_3d_scatter_multiple_datasets_px(datasets,
+                                                        feature1 = 0, 
+                                                        feature2 = 1,
+                                                        feature3 = 2,
+                                                        title = f'3d Scatter of {name} Predictions')
         #print(predictions)
