@@ -73,25 +73,40 @@ class DictIterClassifier(BaseEstimator, ClassifierMixin):
         else:
             self.classifier_params = classifier_params
 
-        self.classifier_list = [(name, classifier(**params)) 
-                                for (name, classifier), params in zip(classifier_list, self.classifier_params)]
+        self.classifier_dict_list = [{'name': name, 'classifier': classifier(**params)}
+                                      for (name, classifier), params in zip(classifier_list, self.classifier_params)]
 
 
     def fit(self, X, y):
 
-        if self.classifier_list is []:
+        if self.classifier_dict_list is []:
             raise ValueError("Classifier is not provided. Please initialize the classifier.")
         
-        self.classifiers_list = [(name, classifier.fit(X, y)) for name, classifier in self.classifier_list]
+        self.classifiers_dict_list = [
+            {**dict, 'classifier': dict['classifier'].fit(X,y)} 
+            for dict in self.classifier_dict_list
+        ]
         return self
     
 
     def predict(self, X):
 
-        if self.classifier_list is []:
+        if self.classifier_dict_list is []:
             raise ValueError("Classifier is not provided. Please initialize the classifier.")
         
-        return [(name, classifier.predict(X), classifier.predict_proba(X)) for name, classifier in self.classifier_list]
+        predictions_dict_list = [
+            dict(
+                 {key: val for key,val in clsf_dict.items() if key != 'classifier'},
+                 **{
+                     'predicted_proba': clsf_dict['classifier'].predict_proba(X),
+                     'predicted_y': clsf_dict['classifier'].predict(X),
+                     'classes': clsf_dict['classifier'].classes_
+                    }
+            )
+            for clsf_dict in self.classifier_dict_list
+        ]
+        
+        return predictions_dict_list
     
 
     
@@ -127,7 +142,7 @@ if __name__=="__main__":
     "Decision Tree": DecisionTreeClassifier,
     "Random Forest": RandomForestClassifier,
     #"SVC": SVC,
-    "Naive Bayes": GaussianNB,
+    #"Naive Bayes": GaussianNB,
     #"XGboost": XGBClassifier,
     #"Lightgbm": LGBMClassifier
     }
@@ -228,11 +243,15 @@ if __name__=="__main__":
     dict_iter_classifier.fit(X_train, y_train)
 
     # Make predictions
-    predictions_list = dict_iter_classifier.predict(X_test)
-    #print(predictions_list)
+    predictions_dict_list = dict_iter_classifier.predict(X_test)
+    #print(predictions_dict_list)
 
 
-    for name, predictions in predictions_list:
+    for predictions_dict in predictions_dict_list:
+
+        name = predictions_dict['name']
+        predictions = predictions_dict['predicted_y']
+
         correct_mask = (predictions == y_test)
 
         correct_predictions = predictions[correct_mask]

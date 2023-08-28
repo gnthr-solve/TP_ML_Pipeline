@@ -168,14 +168,14 @@ class Metrics():
 
         #print(len(binned_probabilities))
         #print(np.shape(binned_probabilities))
-        print(binned_probabilities[:1])
+        #print(binned_probabilities[:1])
         #print(binned_y_test[0])
 
         mean_pred_proba = [bin.sum()/len(bin) for bin in binned_probabilities]
         mean_freq = [bin.sum()/len(bin) for bin in binned_y_test]
 
-        print(mean_pred_proba)
-        print(mean_freq)
+        #print(mean_pred_proba)
+        #print(mean_freq)
 
         fig = px.line(x = mean_pred_proba, y = mean_freq, title = 'Calibration Curve')
         fig.show()
@@ -198,7 +198,7 @@ if __name__=="__main__":
 
     import pandas as pd
     from loguru import logger
-    from Classifier import Classifier
+    from Classifier import Classifier, DictIterClassifier
     from Data_Generator import Multi_Modal_Dist_Generator
     from Visualiser import RawVisualiser
     from parameters import mixed_3d_test_dict
@@ -221,7 +221,7 @@ if __name__=="__main__":
     "Decision Tree": DecisionTreeClassifier,
     "Random Forest": RandomForestClassifier,
     #"SVC": SVC,
-    "Naive Bayes": GaussianNB,
+    #"Naive Bayes": GaussianNB,
     #"XGboost": XGBClassifier,
     #"Lightgbm": LGBMClassifier
     }
@@ -230,19 +230,20 @@ if __name__=="__main__":
     Classify to obtain Metrics Test Case
     -------------------------------------------------------------------------------------------------------------------------------------------
     """
-    # Initialize the classifier, e.g., Support Vector Machine (SVC)
-    classifier = LogisticRegression(random_state=42)
-    model = Classifier(classifier=classifier)
-
-    # Fit the model on the data
-    model.fit(X_train, y_train)
+    dict_iter_classifier = DictIterClassifier(classifiers_dict = classifiers_dict)
+    
+    dict_iter_classifier.fit(X_train, y_train)
+    #Make predictions
+    predictions_dict_list = dict_iter_classifier.predict(X_test)
 
     # Make predictions
-    y_predictions = model.predict(X_test)
+    y_predictions = [pred_dict['predicted_y'] for pred_dict in predictions_dict_list]
 
-    prob_predictions = model.predict_proba(X_test)
+    prob_predictions = [pred_dict['predicted_proba'] for pred_dict in predictions_dict_list]
 
-    predictions_dict = {'predictions': y_predictions, 'probabilities': prob_predictions[1], 'classes': prob_predictions[0]}
+    classes = [pred_dict['classes'] for pred_dict in predictions_dict_list]
+
+    predictions_dict = {'predictions': y_predictions[0], 'probabilities': prob_predictions[0], 'classes': classes[0]}
     
     metr = Metrics(X_test, y_test, predictions_dict)
 
