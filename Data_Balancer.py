@@ -75,7 +75,7 @@ if __name__=="__main__":
     from loguru import logger
     from imblearn.over_sampling import ADASYN,RandomOverSampler,KMeansSMOTE,SMOTE,BorderlineSMOTE,SVMSMOTE,SMOTENC, RandomOverSampler
     from Data_Generator import Multi_Modal_Dist_Generator
-    from Visualiser import Visualiser
+    from Visualiser import RawVisualiser
     from parameters import mixed_3d_test_dict
 
 
@@ -93,7 +93,7 @@ if __name__=="__main__":
     data_generator = Multi_Modal_Dist_Generator(**mixed_3d_test_dict)
     X_train, X_test, y_train, y_test = data_generator.prepare_data(0.2)
 
-    visualiser = Visualiser()
+    visualiser = RawVisualiser()
 
 
     """

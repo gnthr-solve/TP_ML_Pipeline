@@ -177,6 +177,6 @@ n_samples_list = [10e2, 10e3, 10e4]
 n_features_list = [10,20,50]
 
 
-run_Study_experiment(class_ratio_list[:1], n_samples_list[:1], n_features_list[:1], balancing_methods, classifiers)
+#run_Study_experiment(class_ratio_list[:1], n_samples_list[:1], n_features_list[:1], balancing_methods, classifiers)
 #run_iter_experiment(mixed_3d_test_dict, balancing_methods, classifiers)
-#run_dict_iter_experiment(mixed_3d_test_dict, balancing_methods, classifiers)
+run_dict_iter_experiment(mixed_3d_test_dict, balancing_methods, classifiers)

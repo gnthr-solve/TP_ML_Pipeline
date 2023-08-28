@@ -1,6 +1,7 @@
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
 from parameters import default_test_dict
 import numpy as np
+import plotly.express as px
 
 
 
@@ -102,17 +103,40 @@ class IterAssessor():
 
 class Metrics():
 
-    def __init__(self, y_test_dict, y_predicted_dict, metrics_dict, balanced = False):
+    def __init__(self, 
+                 X_test, 
+                 y_test,
+                 #test_data, 
+                 predictions_dict, 
+                 #metrics_dict, 
+                 #balanced = False
+                 ):
         """
         Input: dictionaries with the parameters of generation, balancing and classification as keys or
         other key value pairs
         """
-        self.y_test = y_test_dict
-        self.y_predicted = y_predicted_dict
-        #self.y_test_dict = y_test_dict
-        #self.y_predicted_dict = y_predicted_dict
-        self.metrics_dict = metrics_dict
-        self.balanced = balanced
+
+        self.X_test = X_test
+        self.y_test = y_test
+        self.classes = predictions_dict['classes']
+        #print(self.classes)
+        #print(np.where(self.classes == 1))
+        #print(np.shape(np.where(self.classes == 1)))
+        #print(np.where(self.classes == 1)[0])
+        all_classes_proba_array = predictions_dict['probabilities']
+        minority_proba_2darray = all_classes_proba_array[:, np.where(self.classes == 1)[0]]
+        self.test_probabilities = minority_proba_2darray.flatten()
+        self.y_predicted = predictions_dict['predictions']
+        #self.predictions_dict = predictions_dict,
+        #self.metrics_dict = metrics_dict
+        #self.balanced = balanced
+
+        #print(predictions_dict['probabilities'][:20])
+        #print(minority_proba_2darray[:20])
+        #print(self.test_probabilities[:20])
+        #print(np.sum(self.test_probabilities[:20], axis = 1))
+        #print(len(self.test_probabilities))
+        #print(self.y_predicted)
         
     def confusion_values(self):
         y_test = self.y_test
@@ -127,6 +151,36 @@ class Metrics():
 
         self.NB = self.TP - harm_to_benefit * self.FP
 
+
+    def calibration_curve(self, k):
+
+        sorted_indices = np.argsort(self.test_probabilities)
+        #print(sorted_indices)
+
+        sorted_probabilities = self.test_probabilities[sorted_indices]
+        #print(sorted_probabilities[:20])
+
+        sorted_y_test = self.y_test[sorted_indices]
+        #sorted_y_predicted = self.y_predicted[sorted_indices]
+
+        binned_probabilities = np.array_split(sorted_probabilities, k)
+        binned_y_test = np.array_split(sorted_y_test, k)
+
+        #print(len(binned_probabilities))
+        #print(np.shape(binned_probabilities))
+        print(binned_probabilities[:1])
+        #print(binned_y_test[0])
+
+        mean_pred_proba = [bin.sum()/len(bin) for bin in binned_probabilities]
+        mean_freq = [bin.sum()/len(bin) for bin in binned_y_test]
+
+        print(mean_pred_proba)
+        print(mean_freq)
+
+        fig = px.line(x = mean_pred_proba, y = mean_freq, title = 'Calibration Curve')
+        fig.show()
+
+
     def evaluate():
         pass
 
@@ -134,3 +188,64 @@ class Metrics():
 
 #precision_score(study.y_test,study.y_predicted_no_balancing)
 #precision_score(study.y_test,study.y_predicted_balanced)
+
+
+
+
+
+
+if __name__=="__main__":
+
+    import pandas as pd
+    from loguru import logger
+    from Classifier import Classifier
+    from Data_Generator import Multi_Modal_Dist_Generator
+    from Visualiser import RawVisualiser
+    from parameters import mixed_3d_test_dict
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.tree import DecisionTreeClassifier
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.svm import SVC
+    from sklearn.naive_bayes import GaussianNB
+    from xgboost import XGBClassifier
+    from lightgbm import LGBMClassifier
+
+
+    data_generator = Multi_Modal_Dist_Generator(**mixed_3d_test_dict)
+    X_train, X_test, y_train, y_test = data_generator.prepare_data(0.2)
+
+    visualiser = RawVisualiser()
+
+    classifiers_dict = {
+    "Logistic Regression": LogisticRegression,
+    "Decision Tree": DecisionTreeClassifier,
+    "Random Forest": RandomForestClassifier,
+    #"SVC": SVC,
+    "Naive Bayes": GaussianNB,
+    #"XGboost": XGBClassifier,
+    #"Lightgbm": LGBMClassifier
+    }
+
+    """
+    Classify to obtain Metrics Test Case
+    -------------------------------------------------------------------------------------------------------------------------------------------
+    """
+    # Initialize the classifier, e.g., Support Vector Machine (SVC)
+    classifier = LogisticRegression(random_state=42)
+    model = Classifier(classifier=classifier)
+
+    # Fit the model on the data
+    model.fit(X_train, y_train)
+
+    # Make predictions
+    y_predictions = model.predict(X_test)
+
+    prob_predictions = model.predict_proba(X_test)
+
+    predictions_dict = {'predictions': y_predictions, 'probabilities': prob_predictions[1], 'classes': prob_predictions[0]}
+    
+    metr = Metrics(X_test, y_test, predictions_dict)
+
+    metr.calibration_curve(10)
+
+    

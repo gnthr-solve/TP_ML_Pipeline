@@ -20,10 +20,17 @@ class Classifier(BaseEstimator, ClassifierMixin):
         
         return self.classifier.predict(X)
 
+    def predict_proba(self, X):
+
+        if self.classifier is None:
+            raise ValueError("Classifier is not provided. Please initialize the classifier.")
+        
+        return (self.classifier.classes_, self.classifier.predict_proba(X))
 
 
 
-class IterClassifier():
+
+class IterClassifier(BaseEstimator, ClassifierMixin):
     
     def __init__(self, classifiers = []):
         self.classifiers = classifiers
@@ -42,13 +49,20 @@ class IterClassifier():
             raise ValueError("Classifier is not provided. Please initialize the classifier.")
         
         return [classifier.predict(X) for classifier in self.classifiers]
+    
+    def predict_proba(self, X):
+
+        if self.classifiers is []:
+            raise ValueError("Classifier is not provided. Please initialize the classifier.")
+        
+        return [classifier.predict_proba(X) for classifier in self.classifiers]
 
 
 
 
 
 
-class DictIterClassifier:
+class DictIterClassifier(BaseEstimator, ClassifierMixin):
 
     def __init__(self, classifiers_dict = {}, classifier_params = {'random_state': 42}):
 
@@ -70,14 +84,14 @@ class DictIterClassifier:
         
         self.classifiers_list = [(name, classifier.fit(X, y)) for name, classifier in self.classifier_list]
         return self
-
+    
 
     def predict(self, X):
 
         if self.classifier_list is []:
             raise ValueError("Classifier is not provided. Please initialize the classifier.")
         
-        return [(name, classifier.predict(X)) for name, classifier in self.classifier_list]
+        return [(name, classifier.predict(X), classifier.predict_proba(X)) for name, classifier in self.classifier_list]
     
 
     
@@ -92,7 +106,7 @@ if __name__=="__main__":
     from loguru import logger
     #from imblearn.over_sampling import ADASYN,RandomOverSampler,KMeansSMOTE,SMOTE,BorderlineSMOTE,SVMSMOTE,SMOTENC, RandomOverSampler
     from Data_Generator import Multi_Modal_Dist_Generator
-    from Visualiser import Visualiser
+    from Visualiser import RawVisualiser
     from parameters import mixed_3d_test_dict
     from sklearn.linear_model import LogisticRegression
     from sklearn.tree import DecisionTreeClassifier
@@ -106,14 +120,14 @@ if __name__=="__main__":
     data_generator = Multi_Modal_Dist_Generator(**mixed_3d_test_dict)
     X_train, X_test, y_train, y_test = data_generator.prepare_data(0.2)
 
-    visualiser = Visualiser()
+    visualiser = RawVisualiser()
 
     classifiers_dict = {
     "Logistic Regression": LogisticRegression,
     "Decision Tree": DecisionTreeClassifier,
     "Random Forest": RandomForestClassifier,
     #"SVC": SVC,
-    #"Naive Bayes": GaussianNB,
+    "Naive Bayes": GaussianNB,
     #"XGboost": XGBClassifier,
     #"Lightgbm": LGBMClassifier
     }
