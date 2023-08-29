@@ -8,7 +8,7 @@ class DataBalancer:
 
     def balance_data(self, X, y):
         if self.balancer is None:
-            raise ValueError("Balancer object is not provided. Please initialize the balancer.")
+            return X, y
         
         X_resampled, y_resampled = self.balancer.fit_resample(X, y)
         return X_resampled, y_resampled
@@ -25,10 +25,46 @@ class IterDataBalancer:
         balanced_data = []
 
         for balancer in self.balancers:
-        
-            balanced_data.append(balancer.fit_resample(X, y))
+            
+            if balancer == None:
+                balanced_data.append((X,y))
+            else:
+                balanced_data.append(balancer.fit_resample(X, y))
         
         return balanced_data
+    
+
+
+
+class DictIterDataBalancer:
+
+    def __init__(self, balancers_dict = {}, balancer_params = {'sampling_strategy': 'auto', 'random_state': 42}):
+
+        self.balancer_list = [(name, balancer) for name, balancer in balancers_dict.items()]
+
+        if not isinstance(balancer_params, list):
+            self.balancer_params = [balancer_params for _ in range(len(self.balancer_list))]
+        else:
+            self.balancer_params = balancer_params
+
+
+    def balance_data(self, X, y):
+        
+        balanced_data = []
+
+        for ind, (name, balancer) in enumerate(self.balancer_list):
+            
+            if balancer == None:
+                balanced_data.append((name, X, y))
+
+            else:
+                balancer = balancer(**self.balancer_params[ind])
+                balanced_data.append((name, *balancer.fit_resample(X, y)))
+        
+        return balanced_data
+
+
+
 
 
 
@@ -39,13 +75,14 @@ if __name__=="__main__":
     from loguru import logger
     from imblearn.over_sampling import ADASYN,RandomOverSampler,KMeansSMOTE,SMOTE,BorderlineSMOTE,SVMSMOTE,SMOTENC, RandomOverSampler
     from Data_Generator import Multi_Modal_Dist_Generator
-    from Visualiser import Visualiser
+    from Visualiser import RawVisualiser
     from parameters import mixed_3d_test_dict
 
 
     balancing_methods = {
-    "ADASYN": ADASYN,
-    "RandomOverSampler": RandomOverSampler,
+    "Unbalanced": None,
+    #"ADASYN": ADASYN,
+    #"RandomOverSampler": RandomOverSampler,
     "KMeansSMOTE": KMeansSMOTE,
     "SMOTE": SMOTE,
     "BorderlineSMOTE": BorderlineSMOTE,
@@ -56,7 +93,7 @@ if __name__=="__main__":
     data_generator = Multi_Modal_Dist_Generator(**mixed_3d_test_dict)
     X_train, X_test, y_train, y_test = data_generator.prepare_data(0.2)
 
-    visualiser = Visualiser()
+    visualiser = RawVisualiser()
 
 
     """
@@ -84,14 +121,17 @@ if __name__=="__main__":
     visualiser.plot_3d_scatter((X_train_balanced, y_train_balanced),0,1,2)
     """
 
+
+
     """
     IterDataBalancer Test Case
     -------------------------------------------------------------------------------------------------------------------------------------------
-    """
-    balancers = [method(sampling_strategy='auto', random_state=123)
+    
+    balancers = [(name, method(sampling_strategy='auto', random_state=123)) 
+                 if method != None else (name, method)
                  for name, method in balancing_methods.items()]
     
-    iter_data_balancer = IterDataBalancer(balancers = balancers)
+    iter_data_balancer = IterDataBalancer(balancers = [balancer for name, balancer in balancers])
     
     balanced_data = iter_data_balancer.balance_data(X_train, y_train)
 
@@ -102,18 +142,58 @@ if __name__=="__main__":
     
     #visualiser.plot_2d_scatter((X_train, y_train),0, 1)
 
-    for ind, data in enumerate(balanced_data):
+    for ind, (X_bal, y_bal) in enumerate(balanced_data):
 
-        print(#'Balanced x-data: \n', data[0][-20:], '\n',
-              #'Balanced y-data: \n', data[1][-20:], '\n',
-              #'Balanced size: \n', len(data[0]), '\n'
+        
+        print(#'Balanced x-data: \n', X_bal[-20:], '\n',
+              #'Balanced y-data: \n', y_bal[-20:], '\n',
+              #'Balanced size: \n', len(X_bal), '\n'
               )
         
-        common_data = np.isin(data[0], X_train)
+        common_data = np.isin(X_bal, X_train)
         row_mask = np.all(common_data, axis = 1)
         
-        only_balance_X = data[0][~row_mask]
-        only_balance_y = data[1][~row_mask]
+        only_balance_X = X_bal[~row_mask]
+        only_balance_y = y_bal[~row_mask]
+
+        datasets = [
+            (X_train, y_train, 'Train'),
+            (only_balance_X, only_balance_y, 'Balanced Train')
+        ]
+
+        #visualiser.plot_2d_scatter((X_bal, y_bal),0, 1)
+        visualiser.plot_2d_scatter_multiple_datasets_px(datasets, 
+                                                        feature1 = 0, 
+                                                        feature2 = 1, 
+                                                        title = f'Scatter of {balancers[ind][0]}-balanced Data')
+    
+    """
+
+
+    """
+    DictIterDataBalancer Test Case
+    -------------------------------------------------------------------------------------------------------------------------------------------
+    """
+    
+    iter_data_balancer = DictIterDataBalancer(balancers_dict = balancing_methods)
+    
+    balanced_data = iter_data_balancer.balance_data(X_train, y_train)
+
+    #print(balanced_data)
+
+    for name, X_bal, y_bal in balanced_data:
+
+        
+        print(#f'{name} balanced x-data: \n', X_bal[-20:], '\n',
+              #f'{name} balanced y-data: \n', y_bal[-20:], '\n',
+              #f'{name} balanced size: \n', len(X_bal), '\n'
+              )
+        
+        common_data = np.isin(X_bal, X_train)
+        row_mask = np.all(common_data, axis = 1)
+        
+        only_balance_X = X_bal[~row_mask]
+        only_balance_y = y_bal[~row_mask]
 
         datasets = [
             (X_train, y_train, 'Train'),
@@ -122,6 +202,14 @@ if __name__=="__main__":
 
         #visualiser.plot_2d_scatter((data[0], data[1]),0, 1)
         visualiser.plot_2d_scatter_multiple_datasets_px(datasets, 
-                                                     feature1 = 0, 
-                                                     feature2 = 1, 
-                                                     title = f'Scatter of {balancers[ind]}-balanced Data')
+                                                        feature1 = 0, 
+                                                        feature2 = 1, 
+                                                        title = f'Scatter of {name}-balanced Data')
+        
+        visualiser.plot_3d_scatter_multiple_datasets_px(datasets,
+                                                        feature1 = 0, 
+                                                        feature2 = 1,
+                                                        feature3 = 2,
+                                                        title = f'3d Scatter of {name}-balanced Data')
+
+    

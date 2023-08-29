@@ -368,7 +368,7 @@ class Multi_Modal_Dist_Generator:
 
             
     
-    def prepare_data(self, test_size):
+    def prepare_data(self, test_size = 0.2):
         
         self.create_data()
 

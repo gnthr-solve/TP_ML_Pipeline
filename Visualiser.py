@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 
 
 
-class Visualiser:
+class RawVisualiser:
 
     def __init__(self, **params):
         self.params = params
@@ -329,7 +329,7 @@ if __name__ == "__main__":
     spec_samples = (dist_gen_spec.X, dist_gen_spec.y)
     #spec_samples = dist_gen_spec.prepare_data(0.2)
 
-    visualiser = Visualiser()
+    visualiser = RawVisualiser()
 
     visualiser.plot_2d_scatter(spec_samples, 0, n-1)
     visualiser.plot_3d_scatter(spec_samples, 0, 1, 2)
