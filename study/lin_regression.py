@@ -18,16 +18,16 @@ from scipy.stats import f
 # distance, balancing method, classifier
 
 dataset = pd.read_csv('results_balanced_linreg.csv')
-X_cont = dataset.drop(
-    columns=['balancing_method', 'classifier', 'accuracy', 'precision', 'recall', 'F1 score', 'ROC AUC Score'])
-X_cat = dataset.drop(
-    columns=['class_ratio', 'n_samples', 'n_features', 'accuracy', 'precision', 'recall', 'F1 score', 'ROC AUC Score'])
+X_cont = dataset[['class_ratio', 'n_samples', 'n_features']]
+X_cat = dataset[['balancing_method', 'classifier']]
 
-encoder = ce.BinaryEncoder(cols=['balancing_method', 'classifier'])
-X_dummies = encoder.fit_transform(X_cat)
+#encoder = ce.BinaryEncoder(cols=['balancing_method', 'classifier'])
+#X_dummies = encoder.fit_transform(X_cat)
+X_dummies = pd.get_dummies(X_cat, columns=['balancing_method', 'classifier'])
+
 X = pd.concat([X_cont, X_dummies], axis=1)
 
-target_list = ['accuracy', 'precision', 'F1 score', 'ROC AUC Score']
+target_list = ['accuracy', 'precision', 'recall', 'F1 score', 'ROC AUC Score']
 
 for target in target_list:
     y = dataset[target]
@@ -66,6 +66,9 @@ for target in target_list:
     print(f'predicted p_value with formula:\n{p_value}')
     print(f'predicted F with formula:\n{F}')
 
+
+
+'''   
 # Permutation feature score to visualize the features in order of influence on the target metric
 
 # imp = rfpimp.importances(model_fit, X_test, y_test)
@@ -117,6 +120,7 @@ for target in target_list:
         print('No significant difference')
 
 ######################################################
+
 # 3D PLOTTING TARGET METRIC VS 2 REGRESSORS
 for target in target_list:
     z = dataset[target]
@@ -178,3 +182,4 @@ for target in target_list:
 # TO DO: sistema i plot 2D e 3D
 # csv and barplot for the measures
 ################################################################
+'''
