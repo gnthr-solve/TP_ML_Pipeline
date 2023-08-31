@@ -81,12 +81,12 @@ if __name__=="__main__":
 
     balancing_methods = {
     "Unbalanced": None,
-    #"ADASYN": ADASYN,
+    "ADASYN": ADASYN,
     #"RandomOverSampler": RandomOverSampler,
     "KMeansSMOTE": KMeansSMOTE,
     "SMOTE": SMOTE,
     "BorderlineSMOTE": BorderlineSMOTE,
-    #"SVMSMOTE": SVMSMOTE,
+    "SVMSMOTE": SVMSMOTE,
     #"SMOTENC": SMOTENC,
     }
 
