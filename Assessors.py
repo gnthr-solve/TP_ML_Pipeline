@@ -5,7 +5,7 @@ import numpy as np
 
 
 
-class Study():
+class CorStudy():
     def __init__(self, 
                  data_generator=None, 
                  data_balancer=None,
@@ -14,43 +14,31 @@ class Study():
         self.data_generator = data_generator
         self.data_balancer = data_balancer
         self.data_classifier = data_classifier
-        self.results = {
-            "no balancing": None,
-            "balanced": None
-        }
+        
         
     def run(self):
+
         X_train, X_test, y_train, y_test = self.data_generator.generate_data()
         self.y_test = y_test
-        self.data_classifier.fit(X_train, y_train)
-        self.y_predicted_no_balancing = self.data_classifier.predict(X_test)
-        self.X_train_balanced, self.y_train_balanced = self.data_balancer.balance_data(X_train, y_train)
-        self.data_classifier.fit(self.X_train_balanced, self.y_train_balanced)
-        self.y_predicted_balanced = self.data_classifier.predict(X_test)
-        
-    def calculate_metrics(self):
-        imbalanced_results = {
-            "accuracy": accuracy_score(self.y_test,self.y_predicted_no_balancing),
-            "precision": precision_score(self.y_test,self.y_predicted_no_balancing), 
-            "recall":  recall_score(self.y_test,self.y_predicted_no_balancing),
-            "F1 score": f1_score(self.y_test,self.y_predicted_no_balancing),
-            "ROC AUC Score": roc_auc_score(self.y_test,self.y_predicted_no_balancing), 
-            #"Confusion Matrix": confusion_matrix(self.y_test,self.y_predicted_no_balancing)
-        }
-        balanced_results = {
-            "accuracy": accuracy_score(self.y_test,self.y_predicted_balanced),
-            "precision": precision_score(self.y_test,self.y_predicted_balanced), 
-            "recall":  recall_score(self.y_test,self.y_predicted_balanced),
-            "F1 score": f1_score(self.y_test,self.y_predicted_balanced),
-            "ROC AUC Score": roc_auc_score(self.y_test,self.y_predicted_balanced), 
-            #"Confusion Matrix": confusion_matrix(self.y_test,self.y_predicted_balanced)
-        }
-        
-        return {
-            "imbalanced_results": imbalanced_results,
-            "balanced_results": balanced_results
-        }
 
+        self.X_train_balanced, self.y_train_balanced = self.data_balancer.balance_data(X_train, y_train)
+
+        self.data_classifier.fit(self.X_train_balanced, self.y_train_balanced)
+        self.y_predicted = self.data_classifier.predict(X_test)
+    
+
+    def calculate_metrics(self):
+        
+        results = {
+            "accuracy": accuracy_score(self.y_test,self.y_predicted),
+            "precision": precision_score(self.y_test,self.y_predicted), 
+            "recall":  recall_score(self.y_test,self.y_predicted),
+            "F1 score": f1_score(self.y_test,self.y_predicted),
+            "ROC AUC Score": roc_auc_score(self.y_test,self.y_predicted), 
+            #"Confusion Matrix": confusion_matrix(self.y_test,self.y_predicted)
+        }
+        
+        return results
 
 
 

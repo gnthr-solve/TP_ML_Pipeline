@@ -179,7 +179,7 @@ if __name__=="__main__":
     
     balanced_data = iter_data_balancer.balance_data(X_train, y_train)
 
-    #print(balanced_data)
+    print(balanced_data)
 
     for name, X_bal, y_bal in balanced_data:
 
