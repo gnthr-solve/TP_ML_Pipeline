@@ -11,6 +11,9 @@ import category_encoders as ce
 from scipy.stats import ttest_ind
 from scipy.stats import f
 
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_columns', None)
+
 class LinearRegressionAnalysis:
     def __init__(self,
                  dataset_path,
@@ -64,8 +67,8 @@ class LinearRegressionAnalysis:
 
         return results_dataframe
 
-    def plot_target_vs_regressor(self, target, regressor):
-        X_cont = self.dataset[regressor]
+    def plot_target_vs_regressor(self, target, regressors):
+        X_cont = self.dataset[regressors]
         X_cat = self.dataset[['balancing_method', 'classifier']]
 
         X = self.prepare_data(X_cat, X_cont)
@@ -76,16 +79,17 @@ class LinearRegressionAnalysis:
         model = LinearRegression()
         model_fit = model.fit(X_train, y_train)
 
-        # Calculate the y values for the regression line
-        x_values = np.linspace(X_cont.min(), X_cont.max(), 100)
-        y_values = model_fit.intercept_ + model_fit.coef_[X.columns.get_loc(regressor)] * x_values
+        plt.figure(figsize=(12, 6))
 
-        plt.figure(figsize=(10, 6))
-        plt.scatter(X_cont, y, label='Data points')
-        plt.plot(x_values, y_values, color='red', label='Regression line')
-        plt.xlabel(regressor)
+        for regressor in regressors:
+            x_values = X_cont[regressor]
+            y_values = model_fit.intercept_ + model_fit.coef_[X.columns.get_loc(regressor)] * x_values
+            plt.scatter(x_values, y, label=f'{regressor} - slope: {model_fit.coef_[X.columns.get_loc(regressor)]:.2f}',
+                        alpha=0.5)
+
+        plt.xlabel(', '.join(regressors))
         plt.ylabel(target)
-        plt.title(f'{target} vs {regressor}')
+        plt.title(f'{target} vs {", ".join(regressors)}')
         plt.legend()
         plt.show()
 
@@ -94,9 +98,9 @@ if __name__ == "__main__":
     analyzer = LinearRegressionAnalysis('results_balanced.csv')
     target_metric = 'accuracy'
     regressors_list = ['class_ratio', 'n_samples', 'n_features']
+    regressors_to_plot = ['n_samples', 'n_features']
 
     results = analyzer.perform_linear_regression(target_metric, regressors_list)
     print(f"Linear Regression Results for {target_metric}:\n{results}")
 
-    regressor_to_plot = 'class_ratio'
-    analyzer.plot_target_vs_regressor(target_metric, regressor_to_plot)
+    analyzer.plot_target_vs_regressor(target_metric, regressors_to_plot)
