@@ -547,13 +547,13 @@ if __name__ == "__main__":
     spec_samples = dist_gen_spec.prepare_data(0.2)
 
     #print(dist_fam.dist_list)
-    print(spec_samples, '\n')
+    #print(spec_samples, '\n')
 
 
 
     dist_gen_sklearn = ImbalancedDataGenerator(class_ratio= 0.1, n_samples= 100, n_features=5)
 
     sklearn_samples = dist_gen_sklearn.generate_data()
-
-    print(sklearn_samples)
+    
+    #print(sklearn_samples)
 

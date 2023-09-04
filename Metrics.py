@@ -195,7 +195,7 @@ class IterMetrics():
         
     def confusion_metrics(self):
 
-        y_predicted_list = [pred_dict['y_predicted'] for pred_dict in self.predictions_dict_list]
+        y_predicted_list = [pred_dict['predicted_y'] for pred_dict in self.predictions_dict_list]
 
         results = {
             "accuracy": [],
@@ -327,7 +327,7 @@ if __name__=="__main__":
     from Classifier import Classifier, DictIterClassifier
     from Data_Generator import Multi_Modal_Dist_Generator
     from Visualiser import RawVisualiser
-    from parameters import mixed_3d_test_dict
+    from gen_parameters import mixed_3d_test_dict
     from sklearn.linear_model import LogisticRegression
     from sklearn.tree import DecisionTreeClassifier
     from sklearn.ensemble import RandomForestClassifier
