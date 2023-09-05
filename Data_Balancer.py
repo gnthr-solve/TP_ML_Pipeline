@@ -90,10 +90,17 @@ if __name__=="__main__":
     #"SMOTENC": SMOTENC,
     }
 
+    visualiser = RawVisualiser()
+
     data_generator = Multi_Modal_Dist_Generator(**mixed_3d_test_dict)
     X_train, X_test, y_train, y_test = data_generator.prepare_data(0.2)
 
-    visualiser = RawVisualiser()
+
+    print(#f'Unbalanced train no 0: \n', np.sum(y_train == 0), '\n',
+          #f'Unbalanced train no 1: \n', np.sum(y_train == 1), '\n',
+          #f'Unbalanced train size: \n', len(y_train), '\n'
+        )
+    
 
 
     """
@@ -179,11 +186,14 @@ if __name__=="__main__":
     
     balanced_data = iter_data_balancer.balance_data(X_train, y_train)
 
-    print(balanced_data)
+    #print(balanced_data)
 
     for name, X_bal, y_bal in balanced_data:
 
-        
+        print(f'{name}-balanced no 0: \n', np.sum(y_bal == 0), '\n',
+              f'{name}-balanced no 1: \n', np.sum(y_bal == 1), '\n',
+              f'{name}-balanced size: \n', len(y_bal), '\n'
+              )
         print(#f'{name} balanced x-data: \n', X_bal[-20:], '\n',
               #f'{name} balanced y-data: \n', y_bal[-20:], '\n',
               #f'{name} balanced size: \n', len(X_bal), '\n'
@@ -199,6 +209,8 @@ if __name__=="__main__":
             (X_train, y_train, 'Train'),
             (only_balance_X, only_balance_y, 'Balanced Train')
         ]
+
+        continue
 
         #visualiser.plot_2d_scatter((data[0], data[1]),0, 1)
         visualiser.plot_2d_scatter_multiple_datasets_px(datasets, 

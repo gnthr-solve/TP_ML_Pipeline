@@ -546,8 +546,7 @@ if __name__ == "__main__":
 
     spec_samples = dist_gen_spec.prepare_data(0.2)
 
-    #print(dist_fam.dist_list)
-    #print(spec_samples, '\n')
+    print(spec_samples, '\n')
 
 
 
@@ -555,5 +554,5 @@ if __name__ == "__main__":
 
     sklearn_samples = dist_gen_sklearn.generate_data()
     
-    #print(sklearn_samples)
+    print(sklearn_samples)
 

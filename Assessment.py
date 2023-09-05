@@ -15,7 +15,7 @@ from Data_Balancer import DataBalancer, IterDataBalancer, DictIterDataBalancer
 from Classifier import Classifier, IterClassifier, DictIterClassifier
 from Metrics import IterMetrics
 from Assessors import CorStudy
-from gen_parameters import extract_table_info, mixed_3d_test_dict
+from gen_parameters import extract_table_info, mixed_3d_test_dict, large_normal_test_dict_list
 
 
 
@@ -138,8 +138,8 @@ def run_dict_iter_experiment(generator_dict_list, balancing_methods, classifiers
                             results_df,
                             meta_df.join(metrics_df)
                         ]
-                    )
-        print(results_df)
+                    ).reset_index(drop=True)
+        #print(results_df)
     
     return results_df
 
@@ -177,5 +177,7 @@ n_features_list = range(5, 50, 5)
 
 
 #run_CorStudy_experiment(class_ratio_list[:1], n_samples_list[1:2], n_features_list[:], balancing_methods, classifiers, 'feature_range_experiment')
-run_dict_iter_experiment([mixed_3d_test_dict], balancing_methods, classifiers)
 
+results_df = run_dict_iter_experiment(large_normal_test_dict_list, balancing_methods, classifiers)
+
+results_df.to_csv('normal_features_test.csv')

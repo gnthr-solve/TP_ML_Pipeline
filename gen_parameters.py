@@ -42,6 +42,17 @@ def extract_table_info(use_param_dict):
 
 
 
+
+def format_dict_as_string(input_dict):
+    # Iterate through the key-value pairs and format them as 'key : value' strings
+    formatted_pairs = [f'{key} : {value}' for key, value in input_dict.items()]
+
+    # Join the formatted pairs using ', ' as the separator
+    formatted_string = ', '.join(formatted_pairs)
+
+    return formatted_string
+
+
 """
 Bimodal Multinormal + Beta
 -------------------------------------------------------------------------------------------------------------------------------------------
@@ -83,7 +94,8 @@ sizes = [1900, 100]
 
 mixed_3d_test_dict = {'distributions': distributions,
                       'params_dict_list': dist_parameter_dicts,
-                      'sizes': sizes}
+                      'sizes': sizes,
+                      }
 
 
 
@@ -134,7 +146,8 @@ sizes = [90, 10]
 
 mixed_test_dict = {'distributions': distributions,
                    'params_dict_list': dist_parameter_dicts,
-                   'sizes': sizes}
+                   'sizes': sizes,
+                   }
 
 
 
@@ -181,11 +194,12 @@ dist_parameter_dicts = [{'modes_c0': 2,
                         }
 ]
 
-sizes = [950, 50]
+sizes = [9500, 500]
 
 default_test_dict = {'distributions': distributions,
                      'params_dict_list': dist_parameter_dicts,
-                     'sizes': sizes}
+                     'sizes': sizes,
+                     }
 
 
 
@@ -193,47 +207,50 @@ default_test_dict = {'distributions': distributions,
 Large Normal
 -------------------------------------------------------------------------------------------------------------------------------------------
 """
-n = 10
-#set the parameter dictionary for the MV normal. sigma is the standard deviation
-mu_c0_1 = np.zeros(shape = (n))
-mu_c0_2 = 3 * np.ones(shape = (n))
-mu_c1 = [2, -2, 2, -2, 2, -2, 2, -2, 2, -2]
+k = 10
+large_normal_test_dict_list = []
+for n in range(1, k):
+    #set the parameter dictionary for the MV normal. sigma is the standard deviation
+    mu_c0_1 = np.zeros(shape = (n))
+    mu_c0_2 = 3 * np.ones(shape = (n))
+    mu_c1 = [2, -2, 2, -2, 2, -2, 2, -2, 2, -2]
 
-sigma_c0_1 = np.ones(shape=(n,n)) + np.diag(np.ones(shape = (n)))
-sigma_c0_2 = np.zeros(shape=(n,n)) + np.diag(np.ones(shape = (n)))
-sigma_c1 = np.array([[3, 0, 1, 0, 1, 0, 0, 0, -1, -1],
-                     [0, 3, 1, 0, 0, 0, 1, 0, 0, -1],
-                     [1, 1, 3, 0, 1, 0, 0, 0, 1, 0],
-                     [0, 0, 0, 3, 0, 0, 1, 0, 0, 0],
-                     [1, 0, 1, 0, 3, 0, 0, 0, 1, 0],
-                     [0, 0, 0, 0, 0, 3, 1, 0, 0, 0],
-                     [0, 1, 0, 1, 0, 1, 3, 0, 1, 0],
-                     [0, 0, 0, 0, 0, 0, 0, 3, 0, 1],
-                     [-1, 0, 1, 0, 1, 0, 1, 0, 3, 1],
-                     [-1, -1, 0, 0, 0, 0, 0, 1, 1, 3]])
+    sigma_c0_1 = np.ones(shape=(n,n)) + np.diag(np.ones(shape = (n)))
+    sigma_c0_2 = np.zeros(shape=(n,n)) + np.diag(np.ones(shape = (n)))
+    sigma_c1 = np.array([[3, 0, 1, 0, 1, 0, 0, 0, -1, -1],
+                        [0, 3, 1, 0, 0, 0, 1, 0, 0, -1],
+                        [1, 1, 3, 0, 1, 0, 0, 0, 1, 0],
+                        [0, 0, 0, 3, 0, 0, 1, 0, 0, 0],
+                        [1, 0, 1, 0, 3, 0, 0, 0, 1, 0],
+                        [0, 0, 0, 0, 0, 3, 1, 0, 0, 0],
+                        [0, 1, 0, 1, 0, 1, 3, 0, 1, 0],
+                        [0, 0, 0, 0, 0, 0, 0, 3, 0, 1],
+                        [-1, 0, 1, 0, 1, 0, 1, 0, 3, 1],
+                        [-1, -1, 0, 0, 0, 0, 0, 1, 1, 3]])
 
 
 
-mu_c1 = mu_c1[:n]
-sigma_c1 = sigma_c1[ :n, :n]
+    mu_c1 = mu_c1[:n]
+    sigma_c1 = sigma_c1[ :n, :n]
 
-distributions = [st.multivariate_normal]
+    distributions = [st.multivariate_normal]
 
-#set the parameter dictionaries as a list of dictionaries with parameter dictionaries for classes individually.
-dist_parameter_dicts = [{'modes_c0': 2,
-                         'modes_c1': 1,
-                         'mixing_weights_c0': [0.3, 0.7],
-                         'mixing_weights_c1': [0.3, 0.7],
-                         'params_c0': {'mean': [mu_c0_1, mu_c0_2], 'cov': [sigma_c0_1, sigma_c0_2]},
-                         'params_c1': {'mean': [mu_c1], 'cov': [sigma_c1]}
-                        },
-]
+    #set the parameter dictionaries as a list of dictionaries with parameter dictionaries for classes individually.
+    dist_parameter_dicts = [{'modes_c0': 2,
+                            'modes_c1': 1,
+                            'mixing_weights_c0': [0.3, 0.7],
+                            'mixing_weights_c1': [0.3, 0.7],
+                            'params_c0': {'mean': [mu_c0_1, mu_c0_2], 'cov': [sigma_c0_1, sigma_c0_2]},
+                            'params_c1': {'mean': [mu_c1], 'cov': [sigma_c1]}
+                            },
+    ]
 
-sizes = [9000, 1000]
+    sizes = [9000, 1000]
 
-large_normal_test_dict = {'distributions': distributions,
-                          'params_dict_list': dist_parameter_dicts,
-                          'sizes': sizes}
+    large_normal_test_dict_list.append({'distributions': distributions,
+                                        'params_dict_list': dist_parameter_dicts,
+                                        'sizes': sizes,
+                                        })
 
 
 
@@ -244,4 +261,7 @@ if __name__=="__main__":
     table_info = extract_table_info(mixed_3d_test_dict)
 
     #print(table_info)
-    print(extract_table_info(large_normal_test_dict))
+    #print(extract_table_info(large_normal_test_dict))
+    #print(extract_table_info(default_test_dict))
+
+    print(format_dict_as_string(mixed_3d_test_dict))

@@ -1,0 +1,587 @@
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix, classification_report
+import numpy as np
+import scipy.stats as st
+import plotly.express as px
+from scipy.stats import linregress
+from sklearn.datasets import make_classification
+from sklearn.model_selection import train_test_split
+from gen_parameters import extract_table_info
+from itertools import product
+
+
+
+class Data():
+
+    data_dict = {}
+
+
+
+
+class Assessor(Data):
+
+    def __init__(self, test_size, generation_dict_list, balancers_dict, classifiers_dict):
+
+        self.test_size = test_size
+        self.generation_dict_list = generation_dict_list
+        self.balancers_dict = balancers_dict
+        self.classifiers_dict = classifiers_dict
+        self.exp_dim = (len(generation_dict_list), len(balancers_dict), len(classifiers_dict))
+        self.data_dict['pos_doc'] = {(a,b,c): [] for a,b,c in product(range(self.exp_dim[0]),range(self.exp_dim[1]), range(self.exp_dim[2]))}
+
+
+    def generate(self):     
+
+        test_size = self.test_size
+        table_infos = [extract_table_info(generation_dict) for generation_dict in self.generation_dict_list]
+        self.d = max([info[0] for info in table_infos])
+        n = max([info[1] for info in table_infos])
+        a = self.exp_dim[0]
+        
+        trainset_size = int((1-test_size)*n)
+        testset_size = int(test_size*n)
+
+        self.data_dict['org_X_train'] = np.full(shape = (a, trainset_size, self.d), fill_value = np.nan)
+        self.data_dict['org_y_train'] = np.full(shape = (a, trainset_size,), fill_value = np.nan)
+
+        self.data_dict['org_X_test'] = np.full(shape = (a, testset_size, self.d), fill_value = np.nan)
+        self.data_dict['org_y_test'] = np.full(shape = (a, testset_size,), fill_value = np.nan)
+
+        for i, generation_dict in enumerate(self.generation_dict_list):
+            generation_dict['gen_index'] = i
+            generator = Generator(**generation_dict)
+            generator.prepare_data(self.test_size)
+
+        #print(self.data_dict)
+        print({key: np.shape(value) for key, value in self.data_dict.items()})
+
+        #print((n,d))
+
+
+    def balance(self):
+
+        a = self.exp_dim[0]
+        k = 2 * max([np.sum(self.data_dict['org_y_train'][data_ind] == 0) for data_ind in range(a)]) + 1
+        print(k)
+        print(np.shape(self.data_dict['org_y_train']))
+        b = len(self.balancers_dict)
+
+        self.data_dict['bal_X_train'] = np.full(shape = (a, b, k, self.d), fill_value = np.nan)
+        self.data_dict['bal_y_train'] = np.full(shape = (a, b, k, ), fill_value = np.nan)
+
+        data_balancer = DataBalancer(self.balancers_dict)
+        for i in range(a):
+
+            data_balancer.balance_data(i)
+
+        print(self.data_dict['bal_y_train'])
+        print(self.data_dict['pos_doc'])
+        print({key: np.shape(value) for key, value in self.data_dict.items()})
+        
+
+
+    def clsf_pred(self):
+
+        a, n = np.shape(self.data_dict['org_y_test'])
+
+        self.data_dict['clsf_predictions_y'] = np.full(shape = self.exp_dim + (n,), fill_value = np.nan)
+        self.data_dict['clsf_predictions_proba'] = np.full(shape = self.exp_dim + (n, 2), fill_value = np.nan)
+
+
+
+
+
+
+
+class Generator(Data):
+    
+    def __init__(self, distributions, params_dict_list, sizes, gen_index, random_state = 1234):
+        self.sizes = sizes
+        self.dists = distributions
+        self.params_dict_list = params_dict_list
+        self.gen_index = gen_index
+        self.random_state = random_state
+
+
+    def create_data(self):
+        
+        self.dists_sample_lists = {'c0': [], 'c1': []}
+        
+        for l, parameters_dict in enumerate(self.params_dict_list):
+            #print(parameters_dict.values())
+
+            for i in range(2):
+
+                if (modes:=parameters_dict[f'modes_c{i}']) > 1:
+                    
+                    self.create_multimodal_features(c_id = i, 
+                                                    dist = self.dists[l], 
+                                                    params_dict = parameters_dict[f'params_c{i}'], 
+                                                    modes = modes, 
+                                                    mixing_weights = parameters_dict[f'mixing_weights_c{i}'])
+
+                else:
+                    self.create_unimodal_features(c_id = i, 
+                                                  dist = self.dists[l], 
+                                                  params_dict = parameters_dict[f'params_c{i}'] )
+        
+
+        self.dists_sample_lists = {key: [array if len(array.shape)==2 else array.reshape(-1, 1) for array in sample_features_list]
+                                   for key, sample_features_list in self.dists_sample_lists.items()}
+        
+        X_c0 = np.concatenate(self.dists_sample_lists['c0'], axis = 1)
+        X_c1 = np.concatenate(self.dists_sample_lists['c1'], axis = 1)
+        #print(X_c1)
+
+        y_c0 = np.zeros(self.sizes[0])
+        y_c1 = np.ones(self.sizes[1])
+
+        self.X = np.concatenate( (X_c0, X_c1), axis = 0)
+        self.y = np.concatenate( (y_c0, y_c1), axis = 0)
+
+        # Generate a random permutation of indices
+        permuted_indices = np.random.permutation(len(self.X))
+
+        self.X = self.X[permuted_indices]
+        self.y = self.y[permuted_indices]
+                
+
+
+    def create_multimodal_features(self, c_id, dist, params_dict, modes, mixing_weights):
+
+        size = self.sizes[c_id]
+
+        k = modes
+
+        multinomial = st.multinomial(size, mixing_weights)
+        comp_sizes = multinomial.rvs(size = 1)[0]
+
+        acc_list = []
+
+        for i in range(k):
+
+            params = {key: value[i] for key, value in params_dict.items()}
+
+            frozen_dist = dist(**params)
+
+            acc_list.append(frozen_dist.rvs(size = comp_sizes[i]))
+
+        feature_samples = np.concatenate( acc_list, axis = 0)
+
+        self.dists_sample_lists[f'c{c_id}'].append(feature_samples)
+        
+
+
+    def create_unimodal_features(self, c_id, dist, params_dict):
+
+        size = self.sizes[c_id]
+
+        k = len(next(iter(params_dict.values())))
+
+        sample_features_list = []
+
+        for i in range(k):
+
+            params = {key: value[i] for key, value in params_dict.items()}
+
+            frozen_dist = dist(**params)
+
+            sample_features_list.append(frozen_dist.rvs(size = size))
+
+        self.dists_sample_lists[f'c{c_id}'].extend(sample_features_list)
+
+            
+    
+    def prepare_data(self, test_size = 0.2):
+        
+        self.create_data()
+
+        X_train, X_test, y_train, y_test= train_test_split(
+                                                            self.X, 
+                                                            self.y, 
+                                                            test_size = test_size, 
+                                                            random_state=self.random_state
+                                                            )
+        
+        self.data_dict['org_X_train'][self.gen_index,:,:] = X_train
+        self.data_dict['org_y_train'][self.gen_index,:] = y_train
+
+        self.data_dict['org_X_test'][self.gen_index,:,:] = X_test
+        self.data_dict['org_y_test'][self.gen_index,:] = y_test
+
+        #print('I got called')
+        
+
+
+
+
+
+class DataBalancer(Data):
+
+    def __init__(self, balancers_dict = {}, balancer_params = {'sampling_strategy': 'auto', 'random_state': 42}):
+
+        self.balancer_list = [(name, balancer) for name, balancer in balancers_dict.items()]
+        
+        if not isinstance(balancer_params, list):
+            self.balancer_params = [balancer_params for _ in range(len(self.balancer_list))]
+        else:
+            self.balancer_params = balancer_params
+
+
+    def balance_data(self, data_ind):
+
+        X = self.data_dict['org_X_train'][data_ind]
+        y = self.data_dict['org_y_train'][data_ind]
+
+
+        for bal_ind, (name, balancer) in enumerate(self.balancer_list):
+            
+            if balancer == None:
+                resample = (X,y)
+
+            else:
+                balancer = balancer(**self.balancer_params[bal_ind])
+                resample = balancer.fit_resample(X, y)
+
+            n, d = np.shape(resample[0])
+            #print(n, d)
+            self.data_dict['bal_X_train'][data_ind, bal_ind, :n, :d] = resample[0]
+            self.data_dict['bal_y_train'][data_ind, bal_ind, :n] = resample[1]
+
+            print(self.data_dict['pos_doc'])
+            self.data_dict['pos_doc'] = {key: value + [name]
+                                         if (key[0] == data_ind) & (key[1] == bal_ind)
+                                         else value
+                                         for key, value in self.data_dict['pos_doc'].items()
+                                         }
+        
+        
+
+
+
+
+
+class DataClassifier(Data):
+
+    def __init__(self, classifiers_dict = {}, classifier_params = {'random_state': 42}):
+
+        classifier_list = [(name, classifier) for name, classifier in classifiers_dict.items()]
+
+        if not isinstance(classifier_params, list):
+            self.classifier_params = [classifier_params for _ in range(len(classifier_list))]
+        else:
+            self.classifier_params = classifier_params
+
+        self.classifier_dict_list = [{'name': name, 'classifier': classifier(**params)}
+                                      for (name, classifier), params in zip(classifier_list, self.classifier_params)]
+
+
+    def fit(self, X, y):
+
+        if self.classifier_dict_list is []:
+            raise ValueError("Classifier is not provided. Please initialize the classifier.")
+        
+        self.classifiers_dict_list = [
+            {**dict, 'classifier': dict['classifier'].fit(X,y)} 
+            for dict in self.classifier_dict_list
+        ]
+        return self
+    
+
+    def predict(self, X):
+
+        if self.classifier_dict_list is []:
+            raise ValueError("Classifier is not provided. Please initialize the classifier.")
+        
+        predictions_dict_list = [
+            dict(
+                 {key: val for key,val in clsf_dict.items() if key != 'classifier'},
+                 **{
+                     'predicted_proba': clsf_dict['classifier'].predict_proba(X),
+                     'predicted_y': clsf_dict['classifier'].predict(X),
+                     'classes': clsf_dict['classifier'].classes_
+                    }
+            )
+            for clsf_dict in self.classifier_dict_list
+        ]
+        
+        return predictions_dict_list
+    
+
+    
+
+
+
+class IterMetrics(Data):
+
+    def __init__(self, 
+                 X_test, 
+                 y_test,
+                 predictions_dict_list, 
+                 ):
+
+        self.X_test = X_test
+        self.y_test = y_test
+
+        
+        self.predictions_dict_list = [
+            {
+                **pred_dict,
+                'predicted_proba': (pred_dict['predicted_proba']
+                                    [:, np.where(pred_dict['classes'] == 1)[0]]
+                                    .flatten()
+                                    )
+            }
+            for pred_dict in predictions_dict_list
+        ]
+        
+
+        #print(self.predictions_dict_list[0])
+        #print(predictions_dict_list[0]['predicted_proba'][:20])
+        #print(minority_proba_2darray[:20])
+        #print(self.test_probabilities[:20])
+        #print(np.sum(self.test_probabilities[:20], axis = 1))
+        #print(len(self.test_probabilities))
+        #print(self.y_predicted)
+        
+    def confusion_metrics(self):
+
+        y_predicted_list = [pred_dict['predicted_y'] for pred_dict in self.predictions_dict_list]
+
+        results = {
+            "accuracy": [],
+            "precision": [], 
+            "recall":  [],
+            "F1 score": [],
+            "ROC AUC Score": [], 
+            #"Confusion Matrix": []
+        }
+
+        for y_pred in y_predicted_list:
+            results['accuracy'].append(accuracy_score(self.y_test, y_pred))
+            results['precision'].append(precision_score(self.y_test, y_pred))
+            results['recall'].append(recall_score(self.y_test, y_pred))
+            results['F1 score'].append(f1_score(self.y_test, y_pred))
+            results['ROC AUC Score'].append(roc_auc_score(self.y_test, y_pred))
+            #results['Confusion Matrix'].append(confusion_matrix(self.y_test, y_pred))
+
+        return results
+
+
+
+    def net_benefit(self, harm_to_benefit):
+
+        self.NB = self.TP - harm_to_benefit * self.FP
+
+
+    
+    def calibration_curve(self, k = 10):
+
+        predicted_probabilities = [pred_dict['predicted_proba'] for pred_dict in self.predictions_dict_list]
+        names = [pred_dict['name'] for pred_dict in self.predictions_dict_list]
+        
+        creation_dict ={
+        'mean_pred_proba': [np.arange(0,1, 1/k)],
+        'mean_freq': [np.arange(0,1, 1/k)],
+        'name': [['Optimum' for _ in range(k)]]
+        }
+        for i, pred_proba in enumerate(predicted_probabilities):
+
+            sorted_indices = np.argsort(pred_proba)
+            sorted_probabilities = pred_proba[sorted_indices]
+            sorted_y_test = self.y_test[sorted_indices]
+
+            binned_probabilities = np.array_split(sorted_probabilities, k)
+            binned_y_test = np.array_split(sorted_y_test, k)
+
+            creation_dict['mean_pred_proba'].append([bin.sum()/len(bin) for bin in binned_probabilities])
+            creation_dict['mean_freq'].append([bin.sum()/len(bin) for bin in binned_y_test])
+            creation_dict['name'].append([names[i] for _ in range(k)])
+
+        
+        #print(creation_dict['name'])
+        df_creation_dict = {
+            'Predicted Prob.': np.concatenate(creation_dict['mean_pred_proba']),
+            'Mean Frequency': np.concatenate(creation_dict['mean_freq']),
+            'Name': sum(creation_dict['name'], [])
+        }
+
+        df = pd.DataFrame(df_creation_dict)
+
+        fig = px.line(df, 
+                      x = 'Predicted Prob.', 
+                      y = 'Mean Frequency', 
+                      color = 'Name', 
+                      title = f'Calibration Curve ({k} bins)', 
+                      markers = True
+                      )
+        fig.show()
+    
+
+
+    def calibration_curve_reg(self, k = 10):
+
+        predicted_probabilities = [pred_dict['predicted_proba'] for pred_dict in self.predictions_dict_list]
+        names = [pred_dict['name'] for pred_dict in self.predictions_dict_list]
+        
+        creation_dict ={
+        'mean_pred_proba': [np.arange(0,1, 1/k)],
+        'mean_freq': [np.arange(0,1, 1/k)],
+        'name': [['Optimum' for _ in range(k)]]
+        }
+        for i, pred_proba in enumerate(predicted_probabilities):
+
+            sorted_indices = np.argsort(pred_proba)
+            sorted_probabilities = pred_proba[sorted_indices]
+            sorted_y_test = self.y_test[sorted_indices]
+
+            binned_probabilities = np.array_split(sorted_probabilities, k)
+            binned_y_test = np.array_split(sorted_y_test, k)
+
+            mean_predicted_proba = [bin.sum()/len(bin) for bin in binned_probabilities]
+            res = linregress(
+                x = mean_predicted_proba,
+                y = [bin.sum()/len(bin) for bin in binned_y_test]
+            )
+
+            #creation_dict['mean_pred_proba'].append(mean_predicted_proba)
+            creation_dict['mean_pred_proba'].append(np.arange(0,1, 1/k))
+            #creation_dict['mean_freq'].append([res.intercept + res.slope * x for x in mean_predicted_proba])
+            creation_dict['mean_freq'].append([res.intercept + res.slope * x for x in np.arange(0,1, 1/k)])
+            creation_dict['name'].append([names[i] for _ in range(k)])
+
+        
+        #print(creation_dict['name'])
+        df_creation_dict = {
+            'Predicted Prob.': np.concatenate(creation_dict['mean_pred_proba']),
+            'Mean Frequency': np.concatenate(creation_dict['mean_freq']),
+            'Name': sum(creation_dict['name'], [])
+        }
+
+        df = pd.DataFrame(df_creation_dict)
+
+        fig = px.line(df, x = 'Predicted Prob.', y = 'Mean Frequency', color = 'Name', title = f'Calibration Curve with Regression ({k} bins)')
+        fig.show()
+
+
+
+
+
+if __name__=="__main__":
+
+    import pandas as pd
+    from loguru import logger
+    from imblearn.over_sampling import ADASYN,RandomOverSampler,KMeansSMOTE,SMOTE,BorderlineSMOTE,SVMSMOTE,SMOTENC, RandomOverSampler
+    from Visualiser import RawVisualiser
+    from gen_parameters import mixed_3d_test_dict, mixed_test_dict
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.tree import DecisionTreeClassifier
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.svm import SVC
+    from sklearn.naive_bayes import GaussianNB
+    from xgboost import XGBClassifier
+    from lightgbm import LGBMClassifier
+
+    balancing_methods = {
+    "Unbalanced": None,
+    #"ADASYN": ADASYN,
+    #"RandomOverSampler": RandomOverSampler,
+    "KMeansSMOTE": KMeansSMOTE,
+    "SMOTE": SMOTE,
+    "BorderlineSMOTE": BorderlineSMOTE,
+    "SVMSMOTE": SVMSMOTE,
+    #"SMOTENC": SMOTENC,
+    }
+
+    classifiers_dict = {
+    "Logistic Regression": LogisticRegression,
+    "Decision Tree": DecisionTreeClassifier,
+    "Random Forest": RandomForestClassifier,
+    #"SVC": SVC,
+    #"Naive Bayes": GaussianNB,
+    #"XGboost": XGBClassifier,
+    #"Lightgbm": LGBMClassifier
+    }
+
+    visualiser = RawVisualiser()
+
+    """
+    Generator Test Case
+    -------------------------------------------------------------------------------------------------------------------------------------------
+    
+    data_generator = Generator(**mixed_test_dict)
+    X_train, X_test, y_train, y_test = data_generator.prepare_data(0.2)
+
+    print('X original shape:', np.shape(X_train))
+    #print('X:', X_train)
+    print('y original shape:', np.shape(y_train))
+    """
+
+
+    """
+    DictIterDataBalancer Test Case
+    -------------------------------------------------------------------------------------------------------------------------------------------
+    
+    
+    iter_data_balancer = DictIterDataBalancer(balancers_dict = balancing_methods)
+    
+    balanced_data = iter_data_balancer.balance_data(X_train, y_train)
+
+    #print(balanced_data)
+
+    for name, X_bal, y_bal in balanced_data:
+
+        print('X balanced shape:', np.shape(X_bal))
+        print('y balanced shape:', np.shape(y_bal))
+
+        break
+        
+    """
+
+    """
+    DictIterClassifier Test Case
+    -------------------------------------------------------------------------------------------------------------------------------------------
+    
+    
+    dict_iter_classifier = DictIterClassifier(classifiers_dict = classifiers_dict)
+    # Fit the model on the data
+    dict_iter_classifier.fit(X_train, y_train)
+
+    # Make predictions
+    predictions_dict_list = dict_iter_classifier.predict(X_test)
+    #print(predictions_dict_list)
+
+
+    for predictions_dict in predictions_dict_list:
+
+        name = predictions_dict['name']
+        predictions = predictions_dict['predicted_y']
+        proba_predictions = predictions_dict['predicted_proba']
+
+        print('y predicted shape:', np.shape(predictions))
+        print('probs predicted shape:', np.shape(proba_predictions))
+
+        break
+
+    """
+
+
+    """
+    IterMetrics Test Case
+    -------------------------------------------------------------------------------------------------------------------------------------------
+    
+    
+    metr = IterMetrics(X_test, y_test, predictions_dict_list)
+    """
+
+
+    """
+    Assessor test
+    -------------------------------------------------------------------------------------------------------------------------------------------
+    """
+    
+    assessor = Assessor(0.2, [mixed_test_dict, mixed_test_dict], balancing_methods, classifiers_dict)
+
+    #assessor.generate()
+    #assessor.balance()
+
+    print( (1,2) + (3,))
