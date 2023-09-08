@@ -41,7 +41,7 @@ class DictIterDataBalancer:
     def __init__(self, balancers_dict = {}, balancer_params = {'sampling_strategy': 'auto', 'random_state': 42}):
 
         self.balancer_list = [(name, balancer) for name, balancer in balancers_dict.items()]
-
+        
         if not isinstance(balancer_params, list):
             self.balancer_params = [balancer_params for _ in range(len(self.balancer_list))]
         else:
@@ -76,17 +76,17 @@ if __name__=="__main__":
     from imblearn.over_sampling import ADASYN,RandomOverSampler,KMeansSMOTE,SMOTE,BorderlineSMOTE,SVMSMOTE,SMOTENC, RandomOverSampler
     from Data_Generator import Multi_Modal_Dist_Generator
     from Visualiser import RawVisualiser
-    from parameters import mixed_3d_test_dict
+    from gen_parameters import mixed_3d_test_dict
 
 
     balancing_methods = {
     "Unbalanced": None,
-    #"ADASYN": ADASYN,
+    "ADASYN": ADASYN,
     #"RandomOverSampler": RandomOverSampler,
     "KMeansSMOTE": KMeansSMOTE,
     "SMOTE": SMOTE,
     "BorderlineSMOTE": BorderlineSMOTE,
-    #"SVMSMOTE": SVMSMOTE,
+    "SVMSMOTE": SVMSMOTE,
     #"SMOTENC": SMOTENC,
     }
 
@@ -179,7 +179,7 @@ if __name__=="__main__":
     
     balanced_data = iter_data_balancer.balance_data(X_train, y_train)
 
-    #print(balanced_data)
+    print(balanced_data)
 
     for name, X_bal, y_bal in balanced_data:
 

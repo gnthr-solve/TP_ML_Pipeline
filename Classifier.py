@@ -122,7 +122,7 @@ if __name__=="__main__":
     #from imblearn.over_sampling import ADASYN,RandomOverSampler,KMeansSMOTE,SMOTE,BorderlineSMOTE,SVMSMOTE,SMOTENC, RandomOverSampler
     from Data_Generator import Multi_Modal_Dist_Generator
     from Visualiser import RawVisualiser
-    from parameters import mixed_3d_test_dict
+    from gen_parameters import mixed_3d_test_dict
     from sklearn.linear_model import LogisticRegression
     from sklearn.tree import DecisionTreeClassifier
     from sklearn.ensemble import RandomForestClassifier

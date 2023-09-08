@@ -2,7 +2,7 @@ import numpy as np
 import scipy.stats as st
 
 """
-Applicability functions
+Helper functions
 -------------------------------------------------------------------------------------------------------------------------------------------
 """
 def is_cov_matrix(matrix):
@@ -15,6 +15,30 @@ def is_cov_matrix(matrix):
 
 
 
+def extract_table_info(use_param_dict):
+    params_dict_list = use_param_dict['params_dict_list']
+    
+    n_features = 0
+    for params_dict in params_dict_list:
+
+        if params_dict['modes_c0'] ==1:
+            n_features += len(next(iter(params_dict['params_c0'].values()))) 
+
+        else:
+            param = next(iter(params_dict['params_c0'].values()))[0]
+            #print(param, type(param))
+            if isinstance(param, np.ndarray):
+                n_features += np.shape(param)[0]
+            else:
+                n_features += 1
+    
+
+    sizes = use_param_dict['sizes']
+
+    n_samples = sum(sizes)
+    class_ratio = sizes[1]/n_samples
+
+    return (n_features, n_samples, class_ratio)
 
 
 
@@ -23,10 +47,10 @@ Bimodal Multinormal + Beta
 -------------------------------------------------------------------------------------------------------------------------------------------
 """
 #set the parameter dictionary for the MV normal. sigma is the standard deviation
-mu_c0_1 = [0,0]
-mu_c0_2 = [2,0]
-mu_c1_1 = [3,3]
-mu_c1_2 = [1,3]
+mu_c0_1 = np.array([0,0])
+mu_c0_2 = np.array([2,0])
+mu_c1_1 = np.array([3,3])
+mu_c1_2 = np.array([1,3])
 sigma_c0_1 = np.array([[1,0],
                        [0,3]])
 sigma_c0_2 = np.array([[1,0],
@@ -68,10 +92,10 @@ Multiple and Multimodal Distributions: Multinormal + Beta + Exponential Example
 -------------------------------------------------------------------------------------------------------------------------------------------
 """
 #set the parameter dictionary for the MV normal. sigma is the standard deviation
-mu_c0_1 = [0,0]
-mu_c0_2 = [2,0]
-mu_c1_1 = [3,3]
-mu_c1_2 = [1,3]
+mu_c0_1 = np.array([0,0])
+mu_c0_2 = np.array([2,0])
+mu_c1_1 = np.array([3,3])
+mu_c1_2 = np.array([1,3])
 sigma_c0_1 = np.array([[1,0],
                        [0,3]])
 sigma_c0_2 = np.array([[1,0],
@@ -210,3 +234,14 @@ sizes = [9000, 1000]
 large_normal_test_dict = {'distributions': distributions,
                           'params_dict_list': dist_parameter_dicts,
                           'sizes': sizes}
+
+
+
+
+
+if __name__=="__main__":
+
+    table_info = extract_table_info(mixed_3d_test_dict)
+
+    #print(table_info)
+    print(extract_table_info(large_normal_test_dict))

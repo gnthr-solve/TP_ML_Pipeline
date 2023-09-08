@@ -13,15 +13,15 @@ import sys
 from Data_Generator import ImbalancedDataGenerator, Multi_Modal_Dist_Generator
 from Data_Balancer import DataBalancer, IterDataBalancer, DictIterDataBalancer
 from Classifier import Classifier, IterClassifier, DictIterClassifier
-from Assessors import Study, Metrics
-from parameters import mixed_3d_test_dict
+from Metrics import IterMetrics
+from Assessors import CorStudy
+from gen_parameters import extract_table_info, mixed_3d_test_dict
 
 
 
-def run_Study_experiment(class_ratio_list, n_samples_list, n_features_list, balancing_methods, classifiers):
+def run_CorStudy_experiment(class_ratio_list, n_samples_list, n_features_list, balancing_methods, classifiers, exp_title):
 
-    results_balanced = pd.DataFrame()
-    results_imbalanced = pd.DataFrame()
+    results_df = pd.DataFrame()
 
     for class_ratio in class_ratio_list:
         for n_samples in n_samples_list:
@@ -31,7 +31,11 @@ def run_Study_experiment(class_ratio_list, n_samples_list, n_features_list, bala
 
                 for method in balancing_methods:
 
-                    balancing_method = balancing_methods[method](sampling_strategy='auto', random_state=123)
+                    if method != 'Unbalanced':
+                        balancing_method = balancing_methods[method](sampling_strategy='auto', random_state=123)
+                    else:
+                        balancing_method = balancing_methods[method]
+
                     data_balancer = DataBalancer(balancer=balancing_method)
                     
                     for classifier in classifiers:
@@ -50,7 +54,7 @@ def run_Study_experiment(class_ratio_list, n_samples_list, n_features_list, bala
                         data_classifier = Classifier(classifier=classification_method)
                         
 
-                        study = Study(
+                        study = CorStudy(
                             data_generator=data_generator,
                             data_balancer=data_balancer,
                             data_classifier=data_classifier
@@ -58,93 +62,88 @@ def run_Study_experiment(class_ratio_list, n_samples_list, n_features_list, bala
                         study.run()
                         results = study.calculate_metrics()
                         
-                        results_imbalanced = pd.concat(
+                        results_df = pd.concat(
                             [
-                                results_imbalanced,
-                                meta_df.join(pd.DataFrame(results['imbalanced_results'], index=[0]))
+                                results_df,
+                                meta_df.join(pd.DataFrame(results, index=[0]))
                             ]
                         )
-                        results_imbalanced = results_imbalanced.reset_index(drop=True)
+                        results_df = results_df.reset_index(drop=True)
                         
-                        results_balanced = pd.concat(
-                            [
-                                results_balanced,
-                                meta_df.join(pd.DataFrame(results['balanced_results'], index=[0]))
-                            ]
-                        )
-                        results_balanced = results_balanced.reset_index(drop=True)
+                    
 
                         #print('Done: ', class_ratio, n_samples, n_features, method, classifier)
+
+    print(results_df)
+    results_df.to_csv(f'{exp_title}.csv')
+                
                         
-                #results_balanced.to_csv('results_balanced.csv')
-                #results_imbalanced.to_csv('results_imbalanced.csv')
-                        
-    print(results_balanced)
-    print(results_imbalanced)
-
-
-
-
-
-
-
-
-def run_iter_experiment(generator_dict, balancing_methods, classifiers_dict, results_df = None):
     
-    data_generator = Multi_Modal_Dist_Generator(**generator_dict)
-    X_train, X_test, y_train, y_test = data_generator.prepare_data()
-
-    balancers = [(name, method(sampling_strategy='auto', random_state=123)) 
-                 if method != None else (name, method)
-                 for name, method in balancing_methods.items()]
     
 
-    iter_data_balancer = IterDataBalancer(balancers = [balancer for name, balancer in balancers])
-    
-    balanced_data = iter_data_balancer.balance_data(X_train, y_train)
 
-    for X_bal, y_bal in balanced_data:
-        # Initialize the classifiers, e.g., Support Vector Machine (SVC)
-        classifiers = [(name, classifier(random_state = 42))
-                       for name, classifier in classifiers_dict.items()]
+
+
+
+
+
+def run_dict_iter_experiment(generator_dict_list, balancing_methods, classifiers_dict, results_df = pd.DataFrame()):
+
+    experiment_sizes = [len(generator_dict_list), len(balancing_methods), len(classifiers_dict)]
+    
+    for generator_dict in generator_dict_list:
+
+        metrics_dfs = []
         
-        iter_classifier = IterClassifier(classifiers = [classifier for name, classifier in classifiers])
-        # Fit the model on the data
-        iter_classifier.fit(X_bal, y_bal)
+        dataset_table_info = extract_table_info(generator_dict)
+        meta_dict = {
+        'n_features': [dataset_table_info[0] for _ in range(np.prod(experiment_sizes[1:]))],
+        'n_samples': [dataset_table_info[1] for _ in range(np.prod(experiment_sizes[1:]))],
+        'class_ratio': [dataset_table_info[2] for _ in range(np.prod(experiment_sizes[1:]))],
+        'balancing_method': [],
+        'classifier': [],
+        }
 
-        # Make predictions
-        predictions_list = iter_classifier.predict(X_test)
+        data_generator = Multi_Modal_Dist_Generator(**generator_dict)
+        X_train, X_test, y_train, y_test = data_generator.prepare_data()
 
-        for ind, predictions in enumerate(predictions_list):
-            print(f'Accuracy of {classifiers[ind][0]}:', np.sum(y_test == predictions)/ len(y_test))
-
-
-
-
-
-
-
-def run_dict_iter_experiment(generator_dict, balancing_methods, classifiers_dict, results_df = None):
-    
-    data_generator = Multi_Modal_Dist_Generator(**generator_dict)
-    X_train, X_test, y_train, y_test = data_generator.prepare_data()
-
-
-    dict_iter_data_balancer = DictIterDataBalancer(balancers_dict = balancing_methods)
-    
-    balanced_data = dict_iter_data_balancer.balance_data(X_train, y_train)
-
-    for bal_name, X_bal, y_bal in balanced_data:
         
-        dict_iter_classifier = DictIterClassifier(classifiers_dict = classifiers_dict)
-        # Fit the model on the data
-        dict_iter_classifier.fit(X_bal, y_bal)
+        dict_iter_data_balancer = DictIterDataBalancer(balancers_dict = balancing_methods)
+        
+        balanced_data = dict_iter_data_balancer.balance_data(X_train, y_train)
 
-        # Make predictions
-        predictions_list = dict_iter_classifier.predict(X_test)
+        for bal_name, X_bal, y_bal in balanced_data:
 
-        for clsf_name, predictions in predictions_list:
-            print(f'Accuracy of {clsf_name} after balancing with {bal_name}:', np.sum(y_test == predictions)/ len(y_test))
+            meta_dict["balancing_method"].extend([bal_name for _ in range(experiment_sizes[2])])
+            
+            dict_iter_classifier = DictIterClassifier(classifiers_dict = classifiers_dict)
+            
+            dict_iter_classifier.fit(X_bal, y_bal)
+            predictions_dict_list = dict_iter_classifier.predict(X_test)
+            
+
+            meta_dict["classifier"].extend([predictions_dict['name'] for predictions_dict in predictions_dict_list])
+
+            metrics = IterMetrics(X_test, y_test, predictions_dict_list)
+
+            metrics_dfs.append(pd.DataFrame(metrics.confusion_metrics()))
+            
+    
+        meta_df = pd.DataFrame(meta_dict)
+
+        metrics_df = pd.concat(metrics_dfs).reset_index(drop=True)
+
+        results_df = pd.concat(
+                        [
+                            results_df,
+                            meta_df.join(metrics_df)
+                        ]
+                    )
+        print(results_df)
+    
+    return results_df
+
+
 
 
 
@@ -153,30 +152,30 @@ Execute
 -------------------------------------------------------------------------------------------------------------------------------------------
 """
 balancing_methods = {
-#"Unbalanced": None,
+"Unbalanced": None,
 "ADASYN": ADASYN,
 #"RandomOverSampler": RandomOverSampler,
 #"KMeansSMOTE": KMeansSMOTE,
 "SMOTE": SMOTE,
-#"BorderlineSMOTE": BorderlineSMOTE,
+"BorderlineSMOTE": BorderlineSMOTE,
 #"SVMSMOTE": SVMSMOTE,
 #"SMOTENC": SMOTENC,
 }
 
 classifiers = {
-    #"Logistic Regression": LogisticRegression,
+    "Logistic Regression": LogisticRegression,
     "Decision Tree": DecisionTreeClassifier,
     "Random Forest": RandomForestClassifier,
     #"SVC": SVC,
     #"Naive Bayes": GaussianNB,
     "XGboost": XGBClassifier,
-    "Lightgbm": LGBMClassifier
+    #"Lightgbm": LGBMClassifier
 }
-class_ratio_list = [0.1, 0.01, 0.01]
+class_ratio_list = [0.1, 0.01, 0.001]
 n_samples_list = [10e2, 10e3, 10e4]
-n_features_list = [10,20,50]
+n_features_list = range(5, 50, 5)
 
 
-#run_Study_experiment(class_ratio_list[:1], n_samples_list[:1], n_features_list[:1], balancing_methods, classifiers)
-#run_iter_experiment(mixed_3d_test_dict, balancing_methods, classifiers)
-run_dict_iter_experiment(mixed_3d_test_dict, balancing_methods, classifiers)
+#run_CorStudy_experiment(class_ratio_list[:1], n_samples_list[1:2], n_features_list[:], balancing_methods, classifiers, 'feature_range_experiment')
+run_dict_iter_experiment([mixed_3d_test_dict], balancing_methods, classifiers)
+
