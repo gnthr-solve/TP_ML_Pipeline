@@ -55,7 +55,7 @@ class LinearRegressionAnalysis:
 
         results = {
             'TARGET METRIC': target,
-            'Mean squared error': mean_squared_error,
+            'Mean squared error': MSE,
             'Mean absolute error': mean_abs_error,
             'Intercept': intercept,
             'Coefficients': coefficients,
@@ -84,7 +84,7 @@ class LinearRegressionAnalysis:
         for regressor in regressors:
             x_values = X_cont[regressor]
             y_values = model_fit.intercept_ + model_fit.coef_[X.columns.get_loc(regressor)] * x_values
-            plt.scatter(x_values, y, label=f'{regressor} - slope: {model_fit.coef_[X.columns.get_loc(regressor)]:.2f}',
+            plt.scatter(x_values, y_values, label=f'{regressor} - slope: {model_fit.coef_[X.columns.get_loc(regressor)]:.2f}',
                         alpha=0.5)
 
         plt.xlabel(', '.join(regressors))
@@ -95,10 +95,10 @@ class LinearRegressionAnalysis:
 
 
 if __name__ == "__main__":
-    analyzer = LinearRegressionAnalysis('results_balanced.csv')
+    analyzer = LinearRegressionAnalysis('feature_range_experiment.csv')
     target_metric = 'accuracy'
     regressors_list = ['class_ratio', 'n_samples', 'n_features']
-    regressors_to_plot = ['n_samples', 'n_features']
+    regressors_to_plot = ['class_ratio','n_samples', 'n_features']
 
     results = analyzer.perform_linear_regression(target_metric, regressors_list)
     print(f"Linear Regression Results for {target_metric}:\n{results}")
