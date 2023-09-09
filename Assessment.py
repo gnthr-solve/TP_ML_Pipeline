@@ -15,7 +15,7 @@ from Data_Balancer import DataBalancer, IterDataBalancer, DictIterDataBalancer
 from Classifier import Classifier, IterClassifier, DictIterClassifier
 from Metrics import IterMetrics
 from Assessors import CorStudy
-from gen_parameters import extract_table_info, mixed_3d_test_dict
+from gen_parameters import extract_table_info, create_simple_normal_dict_list,  mixed_3d_test_dict
 
 
 
@@ -139,7 +139,8 @@ def run_dict_iter_experiment(generator_dict_list, balancing_methods, classifiers
                             meta_df.join(metrics_df)
                         ]
                     )
-        print(results_df)
+        results_df = results_df.reset_index(drop=True)
+        #print(results_df)
     
     return results_df
 
@@ -174,8 +175,18 @@ classifiers = {
 class_ratio_list = [0.1, 0.01, 0.001]
 n_samples_list = [10e2, 10e3, 10e4]
 n_features_list = range(5, 50, 5)
+class_distance_list = [3,2,1]
 
 
+#Uncomment to run first pipeline
 #run_CorStudy_experiment(class_ratio_list[:1], n_samples_list[1:2], n_features_list[:], balancing_methods, classifiers, 'feature_range_experiment')
-run_dict_iter_experiment([mixed_3d_test_dict], balancing_methods, classifiers)
 
+
+#Create a dictionary list for the generator with experiment parameters for a standard multivariate normal with variance 1*I
+gen_dict_list = create_simple_normal_dict_list(n_samples_list, n_features_list, class_ratio_list, class_distance_list)
+
+#Run second pipeline approach with dictionary list for alternative generator
+results_df = run_dict_iter_experiment(gen_dict_list, balancing_methods, classifiers)
+
+print(results_df)
+#results_df.to_csv('YourTitleHere.csv')
