@@ -21,7 +21,8 @@ class Assessor(Data):
 
     def __init__(self, test_size, generation_dict_list, balancers_dict, classifiers_dict):
 
-        self.data_dict = {}
+        Data.data_dict = {}
+
 
         self.test_size = test_size
         self.generation_dict_list = generation_dict_list
@@ -97,6 +98,8 @@ class Assessor(Data):
 
         self.data_dict['clsf_predictions_y'] = np.full(shape = self.exp_dim + (n,), fill_value = np.nan)
         self.data_dict['clsf_predictions_proba'] = np.full(shape = self.exp_dim + (n, 2), fill_value = np.nan)
+        self.data_dict['classes_order'] = np.full(shape = self.exp_dim + (2,), fill_value = np.nan)
+
 
         data_classifier = DataClassifier()
 
@@ -105,7 +108,21 @@ class Assessor(Data):
         data_classifier.predict()
 
         print({key: np.shape(value) for key, value in self.data_dict.items()})
+        #print(self.data_dict['classes_order'])
 
+
+
+    def calc_metrics(self):
+
+        self.data_dict['std_metrics'] = np.full(shape = self.exp_dim + (5,), fill_value = np.nan)
+
+
+        metrics = Metrics()
+
+        
+
+        print({key: np.shape(value) for key, value in self.data_dict.items()})
+        #print(self.data_dict['classes_order'])
 
 
 
@@ -353,26 +370,21 @@ class DataClassifier(Data):
 
             self.data_dict['clsf_predictions_y'][i, j, k, : n_i] = clsf.predict(X_test)
             self.data_dict['clsf_predictions_proba'][i, j, k, : n_i, :] = clsf.predict_proba(X_test) 
-
-
-    
+            self.data_dict['classes_order'][i, j, k, :] = clsf.classes_
 
     
 
+    
 
 
-class IterMetrics(Data):
 
-    def __init__(self, 
-                 X_test, 
-                 y_test,
-                 predictions_dict_list, 
-                 ):
+class Metrics(Data):
 
-        self.X_test = X_test
-        self.y_test = y_test
+    def __init__(self):
 
-        
+        pass
+
+        '''
         self.predictions_dict_list = [
             {
                 **pred_dict,
@@ -383,17 +395,27 @@ class IterMetrics(Data):
             }
             for pred_dict in predictions_dict_list
         ]
-        
+        '''
 
-        #print(self.predictions_dict_list[0])
-        #print(predictions_dict_list[0]['predicted_proba'][:20])
-        #print(minority_proba_2darray[:20])
-        #print(self.test_probabilities[:20])
-        #print(np.sum(self.test_probabilities[:20], axis = 1))
-        #print(len(self.test_probabilities))
-        #print(self.y_predicted)
         
     def confusion_metrics(self):
+
+        X = self.data_dict['org_X_test']
+
+        for (i,j,k), (name, clsf) in self.classifier_dict.items():
+            
+            X_test = X[i, :, :]
+
+            # Drop rows with NaN values
+            X_test = X_test[~np.isnan(X_test).all(axis = 1)]
+            # Drop columns with NaN values
+            X_test = X_test[: , ~np.isnan(X_test).all(axis = 0)]
+
+            n_i = len(X_test)
+
+            self.data_dict['clsf_predictions_y'][i, j, k, : n_i] = clsf.predict(X_test)
+            self.data_dict['clsf_predictions_proba'][i, j, k, : n_i, :] = clsf.predict_proba(X_test) 
+            self.data_dict['classes_order'][i, j, k, :] = clsf.classes_
 
         y_predicted_list = [pred_dict['predicted_y'] for pred_dict in self.predictions_dict_list]
 
