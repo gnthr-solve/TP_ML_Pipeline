@@ -21,18 +21,31 @@ class Assessor(Data):
 
     def __init__(self, test_size, generation_dict_list, balancers_dict, classifiers_dict):
 
+        self.data_dict = {}
+
         self.test_size = test_size
         self.generation_dict_list = generation_dict_list
-        self.balancers_dict = balancers_dict
-        self.classifiers_dict = classifiers_dict
+
+        self.balancer_list = [(name, balancer) for name, balancer in balancers_dict.items()]
+        
+        clsf_list = [(name, classifier) for name, classifier in classifiers_dict.items()]
+
         self.exp_dim = (len(generation_dict_list), len(balancers_dict), len(classifiers_dict))
-        self.data_dict['pos_doc'] = {(a,b,c): [] for a,b,c in product(range(self.exp_dim[0]),range(self.exp_dim[1]), range(self.exp_dim[2]))}
+        
+        self.data_dict['assignment_dict'] = {(a, b, c): [gen_dict, bal, clsf]
+                                             for (a, gen_dict), (b, bal), (c, clsf)
+                                             in product(enumerate(generation_dict_list), 
+                                                        enumerate(self.balancer_list), 
+                                                        enumerate(clsf_list)
+                                                        )
+                                            }
 
 
     def generate(self):     
 
         test_size = self.test_size
         table_infos = [extract_table_info(generation_dict) for generation_dict in self.generation_dict_list]
+
         self.d = max([info[0] for info in table_infos])
         n = max([info[1] for info in table_infos])
         a = self.exp_dim[0]
@@ -52,30 +65,29 @@ class Assessor(Data):
             generator.prepare_data(self.test_size)
 
         #print(self.data_dict)
-        print({key: np.shape(value) for key, value in self.data_dict.items()})
+        #print({key: np.shape(value) for key, value in self.data_dict.items()})
 
         #print((n,d))
 
 
     def balance(self):
 
-        a = self.exp_dim[0]
+        a, b, c = self.exp_dim
         k = 2 * max([np.sum(self.data_dict['org_y_train'][data_ind] == 0) for data_ind in range(a)]) + 1
-        print(k)
-        print(np.shape(self.data_dict['org_y_train']))
-        b = len(self.balancers_dict)
+        #print(k)
+        #print(np.shape(self.data_dict['org_y_train']))
 
         self.data_dict['bal_X_train'] = np.full(shape = (a, b, k, self.d), fill_value = np.nan)
         self.data_dict['bal_y_train'] = np.full(shape = (a, b, k, ), fill_value = np.nan)
 
-        data_balancer = DataBalancer(self.balancers_dict)
+        data_balancer = DataBalancer(self.balancer_list)
         for i in range(a):
 
             data_balancer.balance_data(i)
 
-        print(self.data_dict['bal_y_train'])
-        print(self.data_dict['pos_doc'])
-        print({key: np.shape(value) for key, value in self.data_dict.items()})
+        #print(self.data_dict['bal_y_train'])
+        #print(self.data_dict['pos_doc'])
+        #print({key: np.shape(value) for key, value in self.data_dict.items()})
         
 
 
@@ -86,6 +98,13 @@ class Assessor(Data):
         self.data_dict['clsf_predictions_y'] = np.full(shape = self.exp_dim + (n,), fill_value = np.nan)
         self.data_dict['clsf_predictions_proba'] = np.full(shape = self.exp_dim + (n, 2), fill_value = np.nan)
 
+        data_classifier = DataClassifier()
+
+        data_classifier.fit()
+
+        data_classifier.predict()
+
+        print({key: np.shape(value) for key, value in self.data_dict.items()})
 
 
 
@@ -194,7 +213,7 @@ class Generator(Data):
     def prepare_data(self, test_size = 0.2):
         
         self.create_data()
-
+        
         X_train, X_test, y_train, y_test= train_test_split(
                                                             self.X, 
                                                             self.y, 
@@ -202,14 +221,19 @@ class Generator(Data):
                                                             random_state=self.random_state
                                                             )
         
-        self.data_dict['org_X_train'][self.gen_index,:,:] = X_train
-        self.data_dict['org_y_train'][self.gen_index,:] = y_train
+        n_train, d = np.shape(X_train)
+        n_test = np.shape(y_test)[0]
+        #print(n_train, d, n_test)
 
-        self.data_dict['org_X_test'][self.gen_index,:,:] = X_test
-        self.data_dict['org_y_test'][self.gen_index,:] = y_test
+        self.data_dict['org_X_train'][self.gen_index, :n_train, :d] = X_train
+        self.data_dict['org_y_train'][self.gen_index, :n_train] = y_train
 
-        #print('I got called')
+        self.data_dict['org_X_test'][self.gen_index, :n_test, :d] = X_test
+        self.data_dict['org_y_test'][self.gen_index, :n_test] = y_test
+
         
+
+
 
 
 
@@ -217,94 +241,120 @@ class Generator(Data):
 
 class DataBalancer(Data):
 
-    def __init__(self, balancers_dict = {}, balancer_params = {'sampling_strategy': 'auto', 'random_state': 42}):
+    def __init__(self, bal_params_dict = {}):
 
-        self.balancer_list = [(name, balancer) for name, balancer in balancers_dict.items()]
+        self.balancer_dict = {(i,j): assign_list[1] for (i,j,k), assign_list in self.data_dict['assignment_dict'].items()}
         
-        if not isinstance(balancer_params, list):
-            self.balancer_params = [balancer_params for _ in range(len(self.balancer_list))]
-        else:
-            self.balancer_params = balancer_params
-
+        default_dict = {'sampling_strategy': 'auto', 'random_state': 42}
+        self.bal_params_dict = {name: bal_params_dict[name]
+                                if name in bal_params_dict else default_dict
+                                for (name, bal) in self.balancer_dict.values()}
+        
+        
 
     def balance_data(self, data_ind):
 
-        X = self.data_dict['org_X_train'][data_ind]
-        y = self.data_dict['org_y_train'][data_ind]
+        X = self.data_dict['org_X_train']
+        y = self.data_dict['org_y_train']
 
+        for (data_ind, bal_ind), (name, balancer) in self.balancer_dict.items():
 
-        for bal_ind, (name, balancer) in enumerate(self.balancer_list):
+            #n_train, d_train = train_shape_list[data_ind]
+
+            X_bal = X[data_ind]
+            y_bal = y[data_ind]
+            #print("Original X shape: \n", np.shape(X_bal))
+            #print("Original y shape: \n", np.shape(y_bal))
+            #print("Original X: \n", X_bal[:5])
+            #print("Original y: \n", y_bal[:5])
             
+            # Drop rows with NaN values
+            X_bal = X_bal[~np.isnan(X_bal).all(axis = 1)]
+            # Drop columns with NaN values
+            X_bal = X_bal[: , ~np.isnan(X_bal).all(axis = 0)]
+            y_bal = y_bal[~np.isnan(y_bal)]
+            #print("Filtered X shape: \n", np.shape(X_bal))
+            #print("Filtered y shape: \n", np.shape(y_bal))
+            #print("Filtered X: \n", X_bal[:5])
+            #print("Filtered y: \n", y_bal[:5])
+
+
             if balancer == None:
-                resample = (X,y)
+                resample = (X_bal,y_bal)
 
             else:
-                balancer = balancer(**self.balancer_params[bal_ind])
-                resample = balancer.fit_resample(X, y)
+                balancer = balancer(**self.bal_params_dict[name])
+                resample = balancer.fit_resample(X_bal, y_bal)
 
             n, d = np.shape(resample[0])
+            #self.data_dict['bal_shape_dict'][(data_ind, bal_ind)] = (n, d)
             #print(n, d)
+            
             self.data_dict['bal_X_train'][data_ind, bal_ind, :n, :d] = resample[0]
             self.data_dict['bal_y_train'][data_ind, bal_ind, :n] = resample[1]
 
-            print(self.data_dict['pos_doc'])
-            self.data_dict['pos_doc'] = {key: value + [name]
-                                         if (key[0] == data_ind) & (key[1] == bal_ind)
-                                         else value
-                                         for key, value in self.data_dict['pos_doc'].items()
-                                         }
-        
-        
-
+            
 
 
 
 
 class DataClassifier(Data):
 
-    def __init__(self, classifiers_dict = {}, classifier_params = {'random_state': 42}):
+    def __init__(self, clsf_params_dict = {}):
 
-        classifier_list = [(name, classifier) for name, classifier in classifiers_dict.items()]
-
-        if not isinstance(classifier_params, list):
-            self.classifier_params = [classifier_params for _ in range(len(classifier_list))]
-        else:
-            self.classifier_params = classifier_params
-
-        self.classifier_dict_list = [{'name': name, 'classifier': classifier(**params)}
-                                      for (name, classifier), params in zip(classifier_list, self.classifier_params)]
-
-
-    def fit(self, X, y):
-
-        if self.classifier_dict_list is []:
-            raise ValueError("Classifier is not provided. Please initialize the classifier.")
+        default_dict = {'random_state': 42}
+        classifier_dict = {key: assign_list[2] for key, assign_list in self.data_dict['assignment_dict'].items()}
         
-        self.classifiers_dict_list = [
-            {**dict, 'classifier': dict['classifier'].fit(X,y)} 
-            for dict in self.classifier_dict_list
-        ]
+        classifier_dict = {key: (name, clsf(**clsf_params_dict[name]))
+                           if name in clsf_params_dict else (name, clsf(**default_dict))
+                           for key, (name, clsf) in classifier_dict.items()}
+        
+        self.classifier_dict = classifier_dict
+
+
+
+    def fit(self):
+
+        X = self.data_dict['bal_X_train']
+        y = self.data_dict['bal_y_train']
+        
+        for (i,j,k), (name, clsf) in self.classifier_dict.items():
+            
+            X_fit = X[i, j, :, :]
+            y_fit = y[i, j, :]
+
+            # Drop rows with NaN values
+            X_fit = X_fit[~np.isnan(X_fit).all(axis = 1)]
+            # Drop columns with NaN values
+            X_fit = X_fit[: , ~np.isnan(X_fit).all(axis = 0)]
+            
+            y_fit = y_fit[~np.isnan(y_fit)]
+            
+            self.classifier_dict[(i,j,k)] = (name, clsf.fit(X_fit, y_fit))
+
+
         return self
     
 
-    def predict(self, X):
+    def predict(self):
 
-        if self.classifier_dict_list is []:
-            raise ValueError("Classifier is not provided. Please initialize the classifier.")
-        
-        predictions_dict_list = [
-            dict(
-                 {key: val for key,val in clsf_dict.items() if key != 'classifier'},
-                 **{
-                     'predicted_proba': clsf_dict['classifier'].predict_proba(X),
-                     'predicted_y': clsf_dict['classifier'].predict(X),
-                     'classes': clsf_dict['classifier'].classes_
-                    }
-            )
-            for clsf_dict in self.classifier_dict_list
-        ]
-        
-        return predictions_dict_list
+        X = self.data_dict['org_X_test']
+
+        for (i,j,k), (name, clsf) in self.classifier_dict.items():
+            
+            X_test = X[i, :, :]
+
+            # Drop rows with NaN values
+            X_test = X_test[~np.isnan(X_test).all(axis = 1)]
+            # Drop columns with NaN values
+            X_test = X_test[: , ~np.isnan(X_test).all(axis = 0)]
+
+            n_i = len(X_test)
+
+            self.data_dict['clsf_predictions_y'][i, j, k, : n_i] = clsf.predict(X_test)
+            self.data_dict['clsf_predictions_proba'][i, j, k, : n_i, :] = clsf.predict_proba(X_test) 
+
+
     
 
     
@@ -517,71 +567,17 @@ if __name__=="__main__":
     """
 
 
-    """
-    DictIterDataBalancer Test Case
-    -------------------------------------------------------------------------------------------------------------------------------------------
     
-    
-    iter_data_balancer = DictIterDataBalancer(balancers_dict = balancing_methods)
-    
-    balanced_data = iter_data_balancer.balance_data(X_train, y_train)
-
-    #print(balanced_data)
-
-    for name, X_bal, y_bal in balanced_data:
-
-        print('X balanced shape:', np.shape(X_bal))
-        print('y balanced shape:', np.shape(y_bal))
-
-        break
-        
-    """
-
-    """
-    DictIterClassifier Test Case
-    -------------------------------------------------------------------------------------------------------------------------------------------
-    
-    
-    dict_iter_classifier = DictIterClassifier(classifiers_dict = classifiers_dict)
-    # Fit the model on the data
-    dict_iter_classifier.fit(X_train, y_train)
-
-    # Make predictions
-    predictions_dict_list = dict_iter_classifier.predict(X_test)
-    #print(predictions_dict_list)
-
-
-    for predictions_dict in predictions_dict_list:
-
-        name = predictions_dict['name']
-        predictions = predictions_dict['predicted_y']
-        proba_predictions = predictions_dict['predicted_proba']
-
-        print('y predicted shape:', np.shape(predictions))
-        print('probs predicted shape:', np.shape(proba_predictions))
-
-        break
-
-    """
-
-
-    """
-    IterMetrics Test Case
-    -------------------------------------------------------------------------------------------------------------------------------------------
-    
-    
-    metr = IterMetrics(X_test, y_test, predictions_dict_list)
-    """
-
 
     """
     Assessor test
     -------------------------------------------------------------------------------------------------------------------------------------------
     """
     
-    assessor = Assessor(0.2, [mixed_test_dict, mixed_test_dict], balancing_methods, classifiers_dict)
+    assessor = Assessor(0.2, [mixed_3d_test_dict, mixed_test_dict], balancing_methods, classifiers_dict)
 
-    #assessor.generate()
-    #assessor.balance()
+    assessor.generate()
+    assessor.balance()
+    assessor.clsf_pred()
 
-    print( (1,2) + (3,))
+    
