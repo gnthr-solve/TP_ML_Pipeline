@@ -8,7 +8,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 from sklearn.naive_bayes import GaussianNB
 from xgboost import XGBClassifier
-from lightgbm import LGBMClassifier
+#from lightgbm import LGBMClassifier
 import sys
 from Data_Generator import ImbalancedDataGenerator, Multi_Modal_Dist_Generator
 from Data_Balancer import DataBalancer, IterDataBalancer, DictIterDataBalancer
@@ -154,11 +154,11 @@ Execute
 balancing_methods = {
 "Unbalanced": None,
 "ADASYN": ADASYN,
-#"RandomOverSampler": RandomOverSampler,
+"RandomOverSampler": RandomOverSampler,
 #"KMeansSMOTE": KMeansSMOTE,
 "SMOTE": SMOTE,
 "BorderlineSMOTE": BorderlineSMOTE,
-#"SVMSMOTE": SVMSMOTE,
+"SVMSMOTE": SVMSMOTE,
 #"SMOTENC": SMOTENC,
 }
 
@@ -171,11 +171,14 @@ classifiers = {
     "XGboost": XGBClassifier,
     #"Lightgbm": LGBMClassifier
 }
-class_ratio_list = [0.1, 0.01, 0.001]
-n_samples_list = [10e2, 10e3, 10e4]
-n_features_list = range(5, 50, 5)
+#class_ratio_list = [0.1, 0.01, 0.001]
+class_ratio_list = [0.1]
+#n_samples_list = [10e2, 10e3, 10e4]
+n_samples_list = [500, 10e2, 50e2, 10e3, 50e3, 10e4]
+#n_features_list = range(5, 50, 5)
+n_features_list = [10]
 
-
-#run_CorStudy_experiment(class_ratio_list[:1], n_samples_list[1:2], n_features_list[:], balancing_methods, classifiers, 'feature_range_experiment')
-run_dict_iter_experiment([mixed_3d_test_dict], balancing_methods, classifiers)
+#run_CorStudy_experiment(class_ratio_list[:1], n_samples_list[:1], n_features_list[:], balancing_methods, classifiers, 'feature_range_experiment')
+run_CorStudy_experiment(class_ratio_list[:], n_samples_list[:], n_features_list[:], balancing_methods, classifiers, 'n_samples_experiment')
+#run_dict_iter_experiment([mixed_3d_test_dict], balancing_methods, classifiers)
 

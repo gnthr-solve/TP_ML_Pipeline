@@ -200,12 +200,14 @@ if __name__ == "__main__":
                       ('BorderlineSMOTE', 'SVMSMOTE'), ('SVMSMOTE', 'ADASYN'), ('SVMSMOTE', 'SMOTE'), ('SVMSMOTE', 'RandomOverSampler')
                       ]
     test_classifiers = [('Logistic Regression', 'Decision Tree'), ('Logistic Regression', 'Random Forest'), ('Logistic Regression', 'XGboost'),
-                      ('Logistic Regression', 'Lightgbm'), ('Decision Tree', 'Random Forest'), ('Decision Tree', 'XGboost'),
-                      ('Decision Tree', 'Lightgbm'), ('Random Forest', 'XGboost'), ('Random Forest', 'Lightgbm'),
-                      ('Lightgbm', 'XGboost')]
+                      #('Logistic Regression', 'Lightgbm'),
+                        ('Decision Tree', 'Random Forest'), ('Decision Tree', 'XGboost'),
+                      #('Decision Tree', 'Lightgbm') , ('Random Forest', 'Lightgbm'),('Lightgbm', 'XGboost')
+
+                        ('Random Forest', 'XGboost')]
 
     test_target_list = ['accuracy', 'precision', 'recall', 'F1 score', 'ROC AUC Score']
 
     test = Hypothesis_T_Test(target_list=test_target_list, column_bal='balancing_method', column_clas='classifier', test_combination_balancers=test_balancers, test_combination_classifiers=test_classifiers)
-    test.load_data('feature_range_experiment.csv')
+    test.load_data('feature_n_samples_ratio_range_experiment.csv')
     test.perform_t_tests()
