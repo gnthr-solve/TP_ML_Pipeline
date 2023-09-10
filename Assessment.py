@@ -110,7 +110,17 @@ def run_dict_iter_experiment(generator_dict_list, balancing_methods, classifiers
         
         dict_iter_data_balancer = DictIterDataBalancer(balancers_dict = balancing_methods)
         
-        balanced_data = dict_iter_data_balancer.balance_data(X_train, y_train)
+        try:
+            balanced_data = dict_iter_data_balancer.balance_data(X_train, y_train)
+        except Exception as e:
+            logger.error(f'''
+                         Balancing-error in dataset with 
+                         n_samples={dataset_table_info[1]}, 
+                         n_features={dataset_table_info[0]}, 
+                         class_ratio={dataset_table_info[2]} \n
+                         error:{e}
+                         ''')
+            continue
 
         for bal_name, X_bal, y_bal in balanced_data:
 
@@ -140,7 +150,7 @@ def run_dict_iter_experiment(generator_dict_list, balancing_methods, classifiers
                         ]
                     )
         results_df = results_df.reset_index(drop=True)
-        #print(results_df)
+        print(results_df)
     
     return results_df
 
@@ -155,11 +165,11 @@ Execute
 balancing_methods = {
 "Unbalanced": None,
 "ADASYN": ADASYN,
-#"RandomOverSampler": RandomOverSampler,
+"RandomOverSampler": RandomOverSampler,
 #"KMeansSMOTE": KMeansSMOTE,
 "SMOTE": SMOTE,
 "BorderlineSMOTE": BorderlineSMOTE,
-#"SVMSMOTE": SVMSMOTE,
+"SVMSMOTE": SVMSMOTE,
 #"SMOTENC": SMOTENC,
 }
 
@@ -170,12 +180,12 @@ classifiers = {
     #"SVC": SVC,
     #"Naive Bayes": GaussianNB,
     "XGboost": XGBClassifier,
-    #"Lightgbm": LGBMClassifier
+    "Lightgbm": LGBMClassifier
 }
 class_ratio_list = [0.1, 0.01, 0.001]
 n_samples_list = [10e2, 10e3, 10e4]
 n_features_list = range(5, 50, 5)
-class_distance_list = [3,2,1]
+class_distance_list = [3, 2.5, 2, 1.5, 1, 0.5]
 
 
 #Uncomment to run first pipeline
@@ -183,10 +193,10 @@ class_distance_list = [3,2,1]
 
 
 #Create a dictionary list for the generator with experiment parameters for a standard multivariate normal with variance 1*I
-gen_dict_list = create_simple_normal_dict_list(n_samples_list, n_features_list, class_ratio_list, class_distance_list)
+gen_dict_list = create_simple_normal_dict_list(n_samples_list[1:], n_features_list, class_ratio_list, class_distance_list)
 
 #Run second pipeline approach with dictionary list for alternative generator
 results_df = run_dict_iter_experiment(gen_dict_list, balancing_methods, classifiers)
 
 print(results_df)
-#results_df.to_csv('YourTitleHere.csv')
+results_df.to_csv('alt_results.csv')
