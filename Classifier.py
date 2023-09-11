@@ -129,7 +129,7 @@ if __name__=="__main__":
     from sklearn.svm import SVC
     from sklearn.naive_bayes import GaussianNB
     from xgboost import XGBClassifier
-    from lightgbm import LGBMClassifier
+    #from lightgbm import LGBMClassifier
 
 
     data_generator = Multi_Modal_Dist_Generator(**mixed_3d_test_dict)

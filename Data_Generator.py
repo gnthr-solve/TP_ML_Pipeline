@@ -550,9 +550,20 @@ if __name__ == "__main__":
 
 
 
-    dist_gen_sklearn = ImbalancedDataGenerator(class_ratio= 0.1, n_samples= 100, n_features=5)
+    #dist_gen_sklearn = ImbalancedDataGenerator(class_ratio= 1-0.001, n_samples= 1000, n_features=5, flip_y=0.1)
+    dist_gen_sklearn = ImbalancedDataGenerator(class_ratio= 1-0.001, n_samples= 1000, n_features=5)
 
-    sklearn_samples = dist_gen_sklearn.generate_data()
+    X_train, X_test, y_train, y_test = dist_gen_sklearn.generate_data()
     
-    print(sklearn_samples)
+
+    # If one uses flip_y = 0.1 then many more samples than expected exist of the minority class (44 if one uses 1 as minority with random state 123).
+    # If one leaves the argument out exactly 1 exists (as expected). However then we get either a training or
+    # a testset without minority class ---> Error in balancers (if no min. in training) or Error in Metrics (if no min. in test)
+    y_test_1_mask = y_test == 1
+    y_train_1_mask = y_train == 1
+    
+    n_1_test = np.sum(y_test_1_mask)
+    n_1_train = np.sum(y_train_1_mask)
+    print('Number of C1 in Train: \n', n_1_train)
+    print('Number of C1 in Test: \n', n_1_test)
 

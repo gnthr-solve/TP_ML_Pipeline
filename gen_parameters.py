@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.stats as st
-
+from itertools import product
 """
 Helper functions
 -------------------------------------------------------------------------------------------------------------------------------------------
@@ -51,6 +51,35 @@ def format_dict_as_string(input_dict):
     formatted_string = ', '.join(formatted_pairs)
 
     return formatted_string
+
+
+
+def create_simple_normal_dict_list(n_samples_list, n_features_list, class_ratio_list, class_distance_list):
+    gen_dict_list = []
+    for n_samples, n_features, class_ratio, distance in product(n_samples_list, n_features_list, class_ratio_list, class_distance_list):
+        
+        gen_dict = {'distributions': [st.multivariate_normal]}
+        gen_dict['sizes'] = [int(n_samples * (1-class_ratio)), int(n_samples * class_ratio)]
+
+        mu_c0 = np.zeros(shape = (n_features,))
+        mu_c1 = np.sqrt(((distance**2) / n_features) * np.ones(shape = (n_features,)))
+        #print(distance, np.linalg.norm(mu_c1))
+
+        sigma_c0 = np.diag(np.ones(shape = (n_features)))
+        sigma_c1 = np.diag(np.ones(shape = (n_features)))
+
+        dist_parameter_dict = [{'modes_c0': 1,
+                                'modes_c1': 1,
+                                'params_c0': {'mean': [mu_c0], 'cov': [sigma_c0]},
+                                'params_c1': {'mean': [mu_c1], 'cov': [sigma_c1]}
+                                }
+        ]
+
+        gen_dict['params_dict_list'] = dist_parameter_dict
+        gen_dict_list.append(gen_dict)
+
+    return gen_dict_list
+
 
 
 """
