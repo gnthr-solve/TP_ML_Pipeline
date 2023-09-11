@@ -1,8 +1,7 @@
 import pandas as pd
 import numpy as np
 from loguru import logger
-from imblearn.over_sampling import ADASYN, RandomOverSampler, KMeansSMOTE, SMOTE, BorderlineSMOTE, SVMSMOTE, SMOTENC, \
-    RandomOverSampler
+from imblearn.over_sampling import ADASYN, RandomOverSampler, KMeansSMOTE, SMOTE, BorderlineSMOTE, SVMSMOTE, SMOTENC
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -165,8 +164,8 @@ classifiers = {
 
 class_ratio_list = [0.1, 0.01, 0.001]
 n_samples_list = [10e3, 10e4, 10e5]
-n_features_list = range(5, 50, 5)
-class_distance_list = [3, 2.5, 2, 1.5, 1, 0.5]
+n_features_list = range(5, 20, 5)
+class_distance_list = [1.5, 1, 0.5]
 
 # Uncomment to run first pipeline
 # run_CorStudy_experiment(class_ratio_list[:1], n_samples_list[1:2], n_features_list[:], balancing_methods, classifiers, 'feature_range_experiment')
