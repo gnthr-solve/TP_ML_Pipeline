@@ -209,5 +209,5 @@ if __name__ == "__main__":
     test_target_list = ['accuracy', 'precision', 'recall', 'F1 score', 'ROC AUC Score']
 
     test = Hypothesis_T_Test(target_list=test_target_list, column_bal='balancing_method', column_clas='classifier', test_combination_balancers=test_balancers, test_combination_classifiers=test_classifiers)
-    test.load_data('n_samples_experiment.csv')
+    test.load_data('feature_range_experiment.csv')
     test.perform_t_tests()
