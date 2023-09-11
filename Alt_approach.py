@@ -23,11 +23,10 @@ class Assessor(Data):
 
         Data.data_dict = {}
 
-
         self.test_size = test_size
         self.generation_dict_list = generation_dict_list
 
-        self.balancer_list = [(name, balancer) for name, balancer in balancers_dict.items()]
+        balancer_list = [(name, balancer) for name, balancer in balancers_dict.items()]
         
         clsf_list = [(name, classifier) for name, classifier in classifiers_dict.items()]
 
@@ -36,7 +35,7 @@ class Assessor(Data):
         self.data_dict['assignment_dict'] = {(a, b, c): [gen_dict, bal, clsf]
                                              for (a, gen_dict), (b, bal), (c, clsf)
                                              in product(enumerate(generation_dict_list), 
-                                                        enumerate(self.balancer_list), 
+                                                        enumerate(balancer_list), 
                                                         enumerate(clsf_list)
                                                         )
                                             }
@@ -81,7 +80,7 @@ class Assessor(Data):
         self.data_dict['bal_X_train'] = np.full(shape = (a, b, k, self.d), fill_value = np.nan)
         self.data_dict['bal_y_train'] = np.full(shape = (a, b, k, ), fill_value = np.nan)
 
-        data_balancer = DataBalancer(self.balancer_list)
+        data_balancer = DataBalancer()
         for i in range(a):
 
             data_balancer.balance_data(i)
@@ -112,7 +111,15 @@ class Assessor(Data):
 
 
 
-    def calc_metrics(self):
+    def calc_metrics(self, std_metrics_dict = {}):
+
+        default_metrics = {
+            'accuracy': accuracy_score,
+            'precision': precision_score,
+            'recall': recall_score,
+            'F1 score': f1_score,
+            'ROC AUC Score': roc_auc_score,
+        }
 
         self.data_dict['std_metrics'] = np.full(shape = self.exp_dim + (5,), fill_value = np.nan)
 
@@ -400,22 +407,26 @@ class Metrics(Data):
         
     def confusion_metrics(self):
 
-        X = self.data_dict['org_X_test']
+        y_test = self.data_dict['org_y_test']
+        y_pred = self.data_dict['clsf_predictions_y']
 
-        for (i,j,k), (name, clsf) in self.classifier_dict.items():
+        for (i,j,k) in self.data_dict['assignment_dict']:
             
-            X_test = X[i, :, :]
+            y_i_test = y_test[i]
+            y_i_test = y_i_test[~np.isnan(y_i_test)]
 
-            # Drop rows with NaN values
-            X_test = X_test[~np.isnan(X_test).all(axis = 1)]
-            # Drop columns with NaN values
-            X_test = X_test[: , ~np.isnan(X_test).all(axis = 0)]
+            y_clsf_pred = y_pred[i, j, k]
+            y_clsf_pred = y_clsf_pred[~np.isnan(y_clsf_pred)]
+            
+            evaluation = np.array([accuracy_score(y_i_test, y_clsf_pred),
+                                   precision_score(y_i_test, y_clsf_pred),
+                                   recall_score(y_i_test, y_clsf_pred),
+                                   f1_score(y_i_test, y_clsf_pred),
+                                   roc_auc_score(y_i_test, y_clsf_pred),
+                                   ])
 
-            n_i = len(X_test)
+            self.data_dict['std_metrics'][i, j, k, :] = evaluation
 
-            self.data_dict['clsf_predictions_y'][i, j, k, : n_i] = clsf.predict(X_test)
-            self.data_dict['clsf_predictions_proba'][i, j, k, : n_i, :] = clsf.predict_proba(X_test) 
-            self.data_dict['classes_order'][i, j, k, :] = clsf.classes_
 
         y_predicted_list = [pred_dict['predicted_y'] for pred_dict in self.predictions_dict_list]
 
