@@ -96,7 +96,7 @@ class LinearRegressionAnalysis:
 
 if __name__ == "__main__":
     analyzer = LinearRegressionAnalysis('n_samples_experiment.csv')
-    target_metric = 'ROC AUC Score'
+    target_metric = 'accuracy'
     regressors_list = ['class_ratio', 'n_samples', 'n_features']
     regressors_to_plot = ['n_samples']
 

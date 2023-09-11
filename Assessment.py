@@ -180,7 +180,7 @@ classifiers = {
     #"SVC": SVC,
     #"Naive Bayes": GaussianNB,
     "XGboost": XGBClassifier,
-    "Lightgbm": LGBMClassifier
+    # "Lightgbm": LGBMClassifier
 }
 
 class_ratio_list = [0.1, 0.01, 0.001]
