@@ -95,10 +95,10 @@ class LinearRegressionAnalysis:
 
 
 if __name__ == "__main__":
-    analyzer = LinearRegressionAnalysis('feature_range_experiment.csv.csv')
+    analyzer = LinearRegressionAnalysis('ratio_experiment.csv')
     target_metric = 'accuracy'
     regressors_list = ['class_ratio', 'n_samples', 'n_features']
-    regressors_to_plot = ['n_samples']
+    regressors_to_plot = ['class_ratio']
 
     results = analyzer.perform_linear_regression(target_metric, regressors_list)
     print(f"Linear Regression Results for {target_metric}:\n{results}")
