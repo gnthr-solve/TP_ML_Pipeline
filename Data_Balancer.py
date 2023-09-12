@@ -15,25 +15,6 @@ class DataBalancer:
     
 
 
-class IterDataBalancer:
-    def __init__(self, balancers = [], random_state=42):
-        self.balancers = balancers
-        self.random_state = random_state
-
-    def balance_data(self, X, y):
-        
-        balanced_data = []
-
-        for balancer in self.balancers:
-            
-            if balancer == None:
-                balanced_data.append((X,y))
-            else:
-                balanced_data.append(balancer.fit_resample(X, y))
-        
-        return balanced_data
-    
-
 
 
 class DictIterDataBalancer:
@@ -126,54 +107,6 @@ if __name__=="__main__":
     visualiser.plot_3d_scatter((X_train, y_train),0,1,2)
     visualiser.plot_2d_scatter((X_train_balanced, y_train_balanced),0, 1)
     visualiser.plot_3d_scatter((X_train_balanced, y_train_balanced),0,1,2)
-    """
-
-
-
-    """
-    IterDataBalancer Test Case
-    -------------------------------------------------------------------------------------------------------------------------------------------
-    
-    balancers = [(name, method(sampling_strategy='auto', random_state=123)) 
-                 if method != None else (name, method)
-                 for name, method in balancing_methods.items()]
-    
-    iter_data_balancer = IterDataBalancer(balancers = [balancer for name, balancer in balancers])
-    
-    balanced_data = iter_data_balancer.balance_data(X_train, y_train)
-
-
-    print(#'Original x-data: \n', X_train[-20:], '\n',
-          #'Original y-data: \n', y_train[-20:], '\n',
-          'Original size: \n', len(X_train), '\n')
-    
-    #visualiser.plot_2d_scatter((X_train, y_train),0, 1)
-
-    for ind, (X_bal, y_bal) in enumerate(balanced_data):
-
-        
-        print(#'Balanced x-data: \n', X_bal[-20:], '\n',
-              #'Balanced y-data: \n', y_bal[-20:], '\n',
-              #'Balanced size: \n', len(X_bal), '\n'
-              )
-        
-        common_data = np.isin(X_bal, X_train)
-        row_mask = np.all(common_data, axis = 1)
-        
-        only_balance_X = X_bal[~row_mask]
-        only_balance_y = y_bal[~row_mask]
-
-        datasets = [
-            (X_train, y_train, 'Train'),
-            (only_balance_X, only_balance_y, 'Balanced Train')
-        ]
-
-        #visualiser.plot_2d_scatter((X_bal, y_bal),0, 1)
-        visualiser.plot_2d_scatter_multiple_datasets_px(datasets, 
-                                                        feature1 = 0, 
-                                                        feature2 = 1, 
-                                                        title = f'Scatter of {balancers[ind][0]}-balanced Data')
-    
     """
 
 
