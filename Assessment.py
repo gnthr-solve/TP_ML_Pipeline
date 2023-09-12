@@ -1,7 +1,9 @@
 import pandas as pd
 import numpy as np
+import sys
+
 from loguru import logger
-from imblearn.over_sampling import ADASYN,RandomOverSampler,KMeansSMOTE,SMOTE,BorderlineSMOTE,SVMSMOTE,SMOTENC, RandomOverSampler
+from imblearn.over_sampling import ADASYN, RandomOverSampler, KMeansSMOTE, SMOTE, BorderlineSMOTE, SVMSMOTE, SMOTENC, RandomOverSampler
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -9,7 +11,6 @@ from sklearn.svm import SVC
 from sklearn.naive_bayes import GaussianNB
 from xgboost import XGBClassifier
 #from lightgbm import LGBMClassifier
-import sys
 from Data_Generator import ImbalancedDataGenerator, Multi_Modal_Dist_Generator
 from Data_Balancer import DataBalancer, IterDataBalancer, DictIterDataBalancer
 from Classifier import Classifier, IterClassifier, DictIterClassifier
@@ -27,7 +28,7 @@ def run_CorStudy_experiment(class_ratio_list, n_samples_list, n_features_list, b
         for n_samples in n_samples_list:
             for n_features in n_features_list:
 
-                data_generator = ImbalancedDataGenerator(class_ratio=class_ratio, n_samples=int(n_samples), n_features=n_features, distance=1, flip_y=0.1)
+                data_generator = ImbalancedDataGenerator(class_ratio=class_ratio, n_samples=int(n_samples), n_features=n_features, distance=1)
 
                 for method in balancing_methods:
 

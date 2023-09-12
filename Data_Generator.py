@@ -12,7 +12,7 @@ class ImbalancedDataGenerator:
                  n_samples=1000, 
                  n_features=2, 
                  distance=1.0, 
-                 flip_y=0,
+                 #flip_y=0,
                  test_size = 0.2
                 ):
         """
@@ -30,7 +30,7 @@ class ImbalancedDataGenerator:
         self.n_features = n_features
         self.distance = distance
         self.random_state = 123
-        self.flip_y = flip_y
+        #self.flip_y = flip_y
         self.test_size = test_size
 
         self.n_minority_samples = int(self.class_ratio * self.n_samples)
@@ -54,7 +54,7 @@ class ImbalancedDataGenerator:
             n_redundant=int(self.n_features / 2),
             n_clusters_per_class=1,
             weights=[self.class_ratio, 1 - self.class_ratio],
-            flip_y=self.flip_y,
+            #flip_y=self.flip_y,
             class_sep=self.distance,
             random_state=self.random_state
         )
@@ -62,7 +62,8 @@ class ImbalancedDataGenerator:
         X_train, X_test, y_train, y_test = train_test_split(
             self.X, 
             self.y, 
-            test_size=self.test_size, 
+            test_size=self.test_size,
+            stratify = self.y,
             random_state=self.random_state
             )
         return X_train, X_test, y_train, y_test
@@ -375,7 +376,8 @@ class Multi_Modal_Dist_Generator:
         return train_test_split(
             self.X, 
             self.y, 
-            test_size = test_size, 
+            test_size = test_size,
+            stratify = self.y,
             random_state=self.random_state
             )
 
