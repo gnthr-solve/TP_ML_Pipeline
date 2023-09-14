@@ -3,7 +3,7 @@ import numpy as np
 import scipy.stats as st
 import plotly.express as px
 from scipy.stats import linregress
-from sklearn.datasets import make_classification
+#from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
 from gen_parameters import extract_table_info
 from itertools import product
@@ -121,15 +121,36 @@ class Assessor(Data):
             'ROC AUC Score': roc_auc_score,
         }
 
-        self.data_dict['std_metrics'] = np.full(shape = self.exp_dim + (5,), fill_value = np.nan)
+        metrics_dict = std_metrics_dict or default_metrics
 
 
-        metrics = Metrics()
+        self.data_dict['std_metrics_res'] = np.full(shape = self.exp_dim + (len(metrics_dict),), fill_value = np.nan)
+        
+        metrics = Metrics(metrics_dict)
+
+        metrics.confusion_metrics()
+
+        std_metrics_res = self.data_dict['std_metrics_res'].reshape(-1, len(metrics_dict))
+
+        results_df = pd.DataFrame(std_metrics_res, columns= [name for (name, metr_func) in metrics.std_metric_list])
+
+        reference_list = [self.data_dict['assignment_dict'][(i, j, k)] 
+                          for i in range(self.exp_dim[0]) 
+                          for j in range(self.exp_dim[1]) 
+                          for k in range(self.exp_dim[2])]
+        
+        reference_list = [[alist[0], alist[1][0], alist[2][0]] for alist in reference_list]
+
+        reference_df = pd.DataFrame(reference_list, columns= ['dataset', 'balancer', 'classifier'])
+
+        results_df = pd.concat([reference_df, results_df], axis = 1)
 
         
-
         print({key: np.shape(value) for key, value in self.data_dict.items()})
+        print(results_df)
         #print(self.data_dict['classes_order'])
+
+        return results_df
 
 
 
@@ -387,11 +408,13 @@ class DataClassifier(Data):
 
 
 
+
+
 class Metrics(Data):
 
-    def __init__(self):
+    def __init__(self, std_metrics_dict):
 
-        pass
+        self.std_metric_list = [(name, metr_func) for name, metr_func in std_metrics_dict.items()]
 
         '''
         self.predictions_dict_list = [
@@ -419,37 +442,11 @@ class Metrics(Data):
 
             y_clsf_pred = y_pred[i, j, k]
             y_clsf_pred = y_clsf_pred[~np.isnan(y_clsf_pred)]
-            
-            evaluation = np.array([accuracy_score(y_i_test, y_clsf_pred),
-                                   precision_score(y_i_test, y_clsf_pred),
-                                   recall_score(y_i_test, y_clsf_pred),
-                                   f1_score(y_i_test, y_clsf_pred),
-                                   roc_auc_score(y_i_test, y_clsf_pred),
-                                   ])
 
-            self.data_dict['std_metrics'][i, j, k, :] = evaluation
+            evaluation = np.array([metr_func(y_i_test, y_clsf_pred) for (name, metr_func) in self.std_metric_list])
 
+            self.data_dict['std_metrics_res'][i, j, k, :] = evaluation
 
-        y_predicted_list = [pred_dict['predicted_y'] for pred_dict in self.predictions_dict_list]
-
-        results = {
-            "accuracy": [],
-            "precision": [], 
-            "recall":  [],
-            "F1 score": [],
-            "ROC AUC Score": [], 
-            #"Confusion Matrix": []
-        }
-
-        for y_pred in y_predicted_list:
-            results['accuracy'].append(accuracy_score(self.y_test, y_pred))
-            results['precision'].append(precision_score(self.y_test, y_pred))
-            results['recall'].append(recall_score(self.y_test, y_pred))
-            results['F1 score'].append(f1_score(self.y_test, y_pred))
-            results['ROC AUC Score'].append(roc_auc_score(self.y_test, y_pred))
-            #results['Confusion Matrix'].append(confusion_matrix(self.y_test, y_pred))
-
-        return results
 
 
 
@@ -583,8 +580,8 @@ if __name__=="__main__":
     "Random Forest": RandomForestClassifier,
     #"SVC": SVC,
     #"Naive Bayes": GaussianNB,
-    #"XGboost": XGBClassifier,
-    #"Lightgbm": LGBMClassifier
+    "XGboost": XGBClassifier,
+    "Lightgbm": LGBMClassifier
     }
 
     visualiser = RawVisualiser()
@@ -614,5 +611,6 @@ if __name__=="__main__":
     assessor.generate()
     assessor.balance()
     assessor.clsf_pred()
+    assessor.calc_metrics()
 
     
