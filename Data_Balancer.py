@@ -40,7 +40,10 @@ class DictIterDataBalancer:
 
             else:
                 balancer = balancer(**self.balancer_params[ind])
-                balanced_data.append((name, *balancer.fit_resample(X, y)))
+                try:
+                    balanced_data.append((name, *balancer.fit_resample(X, y)))
+                except Exception as e:
+                    print(f'Balancer {name} produced error: \n',  e)
         
         return balanced_data
 

@@ -22,8 +22,12 @@ def extract_table_info(use_param_dict):
     for params_dict in params_dict_list:
 
         if params_dict['modes_c0'] ==1:
-            n_features += len(next(iter(params_dict['params_c0'].values()))) 
-
+            for param in next(iter(params_dict['params_c0'].values())):
+                if isinstance(param, np.ndarray):
+                    n_features += np.shape(param)[0]
+                else:
+                    n_features += 1
+            
         else:
             param = next(iter(params_dict['params_c0'].values()))[0]
             #print(param, type(param))

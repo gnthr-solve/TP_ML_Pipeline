@@ -272,7 +272,7 @@ if __name__ == "__main__":
     """
     Test and Comparison Multi_Modal_Dist_Generator
     -------------------------------------------------------------------------------------------------------------------------------------------
-    """
+    
     dist_gen_spec = Multi_Modal_Dist_Generator(distributions, dist_parameter_dicts, size)
 
     #dist_gen_spec.create_data()
@@ -300,4 +300,46 @@ if __name__ == "__main__":
     n_1_train = np.sum(y_train_1_mask)
     print('Number of C1 in Train: \n', n_1_train)
     print('Number of C1 in Test: \n', n_1_test)
+    """
 
+
+    """
+    Test create_simple_normal_dict_list
+    -------------------------------------------------------------------------------------------------------------------------------------------
+    """
+    from gen_parameters import create_simple_normal_dict_list
+    from Visualiser import RawVisualiser
+
+    visualiser = RawVisualiser()
+
+    class_ratio_list = [0.1, 0.01, 0.001]
+    n_samples_list = [10e2, 10e3, 10e4]
+    n_features_list = [5]
+    class_distance_list = [3, 2.5, 2, 1.5, 1, 0.5]
+
+    gen_dict_list = create_simple_normal_dict_list(n_samples_list[1:2], n_features_list, class_ratio_list, class_distance_list[4:5])
+
+    for gen_dict in gen_dict_list:
+
+        dist_gen_spec = Multi_Modal_Dist_Generator(**gen_dict)
+
+        X_train, X_test, y_train, y_test = dist_gen_spec.prepare_data(0.2)
+        
+
+        datasets = [
+            (X_train, y_train, 'Train data'),
+            (X_test, y_test, 'Test data')
+        ]
+
+
+        #visualiser.plot_2d_scatter((data[0], data[1]),0, 1)
+        visualiser.plot_2d_scatter_multiple_datasets_px(datasets, 
+                                                        feature1 = 0, 
+                                                        feature2 = 1, 
+                                                        title = f'Scatter of generated Data')
+        
+        visualiser.plot_3d_scatter_multiple_datasets_px(datasets,
+                                                        feature1 = 0, 
+                                                        feature2 = 1,
+                                                        feature3 = 2,
+                                                        title = f'3d Scatter of generated Data')
