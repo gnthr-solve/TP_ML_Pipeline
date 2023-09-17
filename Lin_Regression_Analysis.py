@@ -93,12 +93,24 @@ class LinearRegressionAnalysis:
         plt.legend()
         plt.show()
 
-
+''' 
 if __name__ == "__main__":
     analyzer = LinearRegressionAnalysis('ratio_experiment.csv')
     target_metric = 'accuracy'
     regressors_list = ['class_ratio', 'n_samples', 'n_features']
     regressors_to_plot = ['class_ratio']
+
+    results = analyzer.perform_linear_regression(target_metric, regressors_list)
+    print(f"Linear Regression Results for {target_metric}:\n{results}")
+
+    analyzer.plot_target_vs_regressor(target_metric, regressors_to_plot)
+'''
+
+if __name__ == "__main__":
+    analyzer = LinearRegressionAnalysis('experiment3_n_samples.csv')
+    target_metric = 'accuracy'
+    regressors_list = ['class_ratio', 'n_samples', 'n_features']
+    regressors_to_plot = ['n_samples']
 
     results = analyzer.perform_linear_regression(target_metric, regressors_list)
     print(f"Linear Regression Results for {target_metric}:\n{results}")

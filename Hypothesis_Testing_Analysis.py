@@ -191,9 +191,11 @@ class Hypothesis_T_Test:
 
         # Create a DataFrame from the results and save it to a CSV file
         results_df = pd.DataFrame(results)
-        results_df.to_csv('hp_test_results.csv', index=False)
+        #results_df.to_csv('hp_test_results.csv', index=False)
+        results_df.to_csv('hp_test_experiment3_n_samples.csv', index=False)
 
 # Example usage:
+'''
 if __name__ == "__main__":
     test_balancers = [('SMOTE', 'ADASYN'), ('RandomOverSampler', 'SMOTE'), ('RandomOverSampler', 'ADASYN'),
                       ('BorderlineSMOTE', 'SMOTE'), ('BorderlineSMOTE', 'ADASYN'), ('BorderlineSMOTE', 'RandomOverSampler'),
@@ -210,4 +212,22 @@ if __name__ == "__main__":
 
     test = Hypothesis_T_Test(target_list=test_target_list, column_bal='balancing_method', column_clas='classifier', test_combination_balancers=test_balancers, test_combination_classifiers=test_classifiers)
     test.load_data('feature_range_experiment.csv')
+    test.perform_t_tests()
+'''
+if __name__ == "__main__":
+    test_balancers = [('SMOTE', 'ADASYN'), ('RandomOverSampler', 'SMOTE'), ('RandomOverSampler', 'ADASYN'),
+                      ('BorderlineSMOTE', 'SMOTE'), ('BorderlineSMOTE', 'ADASYN'), ('BorderlineSMOTE', 'RandomOverSampler'),
+                      #('BorderlineSMOTE', 'SVMSMOTE'), ('SVMSMOTE', 'ADASYN'), ('SVMSMOTE', 'SMOTE'), ('SVMSMOTE', 'RandomOverSampler')
+                      ]
+    test_classifiers = [('Logistic Regression', 'Random Forest'), ('Logistic Regression', 'XGboost'),
+                      #('Logistic Regression', 'Lightgbm'),
+                        ('Decision Tree', 'Random Forest'), ('Decision Tree', 'XGboost'), ('Logistic Regression', 'Decision Tree'),
+                      #('Decision Tree', 'Lightgbm') , ('Random Forest', 'Lightgbm'),('Lightgbm', 'XGboost')
+
+                        ('Random Forest', 'XGboost')]
+
+    test_target_list = ['accuracy', 'precision', 'recall', 'F1 score', 'ROC AUC Score']
+
+    test = Hypothesis_T_Test(target_list=test_target_list, column_bal='balancing_method', column_clas='classifier', test_combination_balancers=test_balancers, test_combination_classifiers=test_classifiers)
+    test.load_data('experiment3_n_samples.csv')
     test.perform_t_tests()

@@ -1,7 +1,10 @@
+
 import pandas as pd
 import numpy as np
+import sys
+
 from loguru import logger
-from imblearn.over_sampling import ADASYN,RandomOverSampler,KMeansSMOTE,SMOTE,BorderlineSMOTE,SVMSMOTE,SMOTENC, RandomOverSampler
+from imblearn.over_sampling import ADASYN, RandomOverSampler, KMeansSMOTE, SMOTE, BorderlineSMOTE, SVMSMOTE, SMOTENC, RandomOverSampler
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -9,10 +12,9 @@ from sklearn.svm import SVC
 from sklearn.naive_bayes import GaussianNB
 from xgboost import XGBClassifier
 #from lightgbm import LGBMClassifier
-import sys
 from Data_Generator import ImbalancedDataGenerator, Multi_Modal_Dist_Generator
-from Data_Balancer import DataBalancer, IterDataBalancer, DictIterDataBalancer
-from Classifier import Classifier, IterClassifier, DictIterClassifier
+from Data_Balancer import DataBalancer, DictIterDataBalancer
+from Classifier import Classifier, DictIterClassifier
 from Metrics import IterMetrics
 from Assessors import CorStudy
 from gen_parameters import extract_table_info, create_simple_normal_dict_list,  mixed_3d_test_dict
@@ -27,7 +29,7 @@ def run_CorStudy_experiment(class_ratio_list, n_samples_list, n_features_list, b
         for n_samples in n_samples_list:
             for n_features in n_features_list:
 
-                data_generator = ImbalancedDataGenerator(class_ratio=class_ratio, n_samples=int(n_samples), n_features=n_features, distance=1, flip_y=0.1)
+                data_generator = ImbalancedDataGenerator(class_ratio=class_ratio, n_samples=int(n_samples), n_features=n_features, distance=1)
 
                 for method in balancing_methods:
 
@@ -48,8 +50,8 @@ def run_CorStudy_experiment(class_ratio_list, n_samples_list, n_features_list, b
                             "classifier": classifier
                         }, index=[0])
 
-                        logger.info(f"""({class_ratio},{int(n_samples)}) | {n_features} | {method} | {classifier}""")
-                        
+                        #logger.info(f"""({class_ratio},{int(n_samples)}) | {n_features} | {method} | {classifier}""")
+
                         classification_method = classifiers[classifier](random_state=123)
                         data_classifier = Classifier(classifier=classification_method)
                         
@@ -72,11 +74,11 @@ def run_CorStudy_experiment(class_ratio_list, n_samples_list, n_features_list, b
                         
                     
 
-                        #print('Done: ', class_ratio, n_samples, n_features, method, classifier)
+                        print('Done: ', class_ratio, n_samples, n_features, method, classifier)
 
     print(results_df)
     results_df.to_csv(f'{exp_title}.csv')
-                
+
                         
     
     
@@ -148,8 +150,7 @@ def run_dict_iter_experiment(generator_dict_list, balancing_methods, classifiers
                             results_df,
                             meta_df.join(metrics_df)
                         ]
-                    )
-        results_df = results_df.reset_index(drop=True)
+                    ).reset_index(drop=True)
         print(results_df)
     
     return results_df
@@ -158,10 +159,10 @@ def run_dict_iter_experiment(generator_dict_list, balancing_methods, classifiers
 
 
 
-"""
-Execute
+'''
+#Execute
 -------------------------------------------------------------------------------------------------------------------------------------------
-"""
+'''
 balancing_methods = {
 "Unbalanced": None,
 "ADASYN": ADASYN,
@@ -182,7 +183,7 @@ classifiers = {
     "XGboost": XGBClassifier,
     # "Lightgbm": LGBMClassifier
 }
-
+''' 
 class_ratio_list = [0.1, 0.01, 0.001]
 n_samples_list = [10e2, 10e3, 10e4]
 n_features_list = range(5, 50, 5)
@@ -201,3 +202,26 @@ results_df = run_dict_iter_experiment(gen_dict_list, balancing_methods, classifi
 
 print(results_df)
 results_df.to_csv('alt_results.csv')
+'''
+
+''' 
+Matteo's experiments
+'''
+class_ratio_list = [0.1, 0.05, 0.01]
+n_samples_list = [10e3, 50e3, 10e4]
+n_features_list = [10, 30, 50]
+class_distance_list = [1.5, 1, 0.5]
+
+
+#Uncomment to run first pipeline
+run_CorStudy_experiment(class_ratio_list, n_samples_list, n_features_list, balancing_methods, classifiers, 'experiment7_xgboost')
+
+
+#Create a dictionary list for the generator with experiment parameters for a standard multivariate normal with variance 1*I
+#gen_dict_list = create_simple_normal_dict_list(n_samples_list, n_features_list, class_ratio_list, class_distance_list)
+
+#Run second pipeline approach with dictionary list for alternative generator
+#results_df = run_dict_iter_experiment(gen_dict_list, balancing_methods, classifiers)
+
+#print(results_df)
+#results_df.to_csv('alt_results.csv')
