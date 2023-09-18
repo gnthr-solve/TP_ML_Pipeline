@@ -12,8 +12,8 @@ from sklearn.naive_bayes import GaussianNB
 from xgboost import XGBClassifier
 #from lightgbm import LGBMClassifier
 from Data_Generator import ImbalancedDataGenerator, Multi_Modal_Dist_Generator
-from Data_Balancer import DataBalancer, IterDataBalancer, DictIterDataBalancer
-from Classifier import Classifier, IterClassifier, DictIterClassifier
+from Data_Balancer import DataBalancer, DictIterDataBalancer
+from Classifier import Classifier, DictIterClassifier
 from Metrics import IterMetrics
 from Assessors import CorStudy
 from gen_parameters import extract_table_info, create_simple_normal_dict_list,  mixed_3d_test_dict
@@ -108,12 +108,14 @@ def run_dict_iter_experiment(generator_dict_list, balancing_methods, classifiers
         data_generator = Multi_Modal_Dist_Generator(**generator_dict)
         X_train, X_test, y_train, y_test = data_generator.prepare_data()
 
-        
+        print(f'y_train no 1: \n', np.sum(y_train == 1), '\n',
+              f'y_test no 1: \n', np.sum(y_test == 1),
+              )
         dict_iter_data_balancer = DictIterDataBalancer(balancers_dict = balancing_methods)
         
-        try:
-            balanced_data = dict_iter_data_balancer.balance_data(X_train, y_train)
-        except Exception as e:
+        
+        balanced_data = dict_iter_data_balancer.balance_data(X_train, y_train)
+        """ except Exception as e:
             logger.error(f'''
                          Balancing-error in dataset with 
                          n_samples={dataset_table_info[1]}, 
@@ -121,17 +123,21 @@ def run_dict_iter_experiment(generator_dict_list, balancing_methods, classifiers
                          class_ratio={dataset_table_info[2]} \n
                          error:{e}
                          ''')
-            continue
+            continue """
 
         for bal_name, X_bal, y_bal in balanced_data:
 
+            print(f'y_bal no 1: \n', np.sum(y_bal == 1), '\n',
+              #f'y_test no 1: \n', np.sum(y_test == 1), '\n',
+              )
+            
             meta_dict["balancing_method"].extend([bal_name for _ in range(experiment_sizes[2])])
             
             dict_iter_classifier = DictIterClassifier(classifiers_dict = classifiers_dict)
             
             dict_iter_classifier.fit(X_bal, y_bal)
             predictions_dict_list = dict_iter_classifier.predict(X_test)
-            
+            print([np.sum(pred_dict['predicted_y'] == 1) for pred_dict in predictions_dict_list])
 
             meta_dict["classifier"].extend([predictions_dict['name'] for predictions_dict in predictions_dict_list])
 
@@ -150,7 +156,7 @@ def run_dict_iter_experiment(generator_dict_list, balancing_methods, classifiers
                             meta_df.join(metrics_df)
                         ]
                     ).reset_index(drop=True)
-        #print(results_df)
+        print(results_df)
     
     return results_df
 
@@ -169,7 +175,7 @@ balancing_methods = {
 #"KMeansSMOTE": KMeansSMOTE,
 "SMOTE": SMOTE,
 "BorderlineSMOTE": BorderlineSMOTE,
-"SVMSMOTE": SVMSMOTE,
+#"SVMSMOTE": SVMSMOTE,
 #"SMOTENC": SMOTENC,
 }
 
@@ -194,7 +200,10 @@ class_distance_list = [3, 2.5, 2, 1.5, 1, 0.5]
 
 
 #Create a dictionary list for the generator with experiment parameters for a standard multivariate normal with variance 1*I
-gen_dict_list = create_simple_normal_dict_list(n_samples_list[1:], n_features_list, class_ratio_list, class_distance_list)
+gen_dict_list = create_simple_normal_dict_list(n_samples_list[1:], n_features_list, class_ratio_list, class_distance_list[4:5])
+
+#gen_dict_list_info = [extract_table_info(generator_dict) for generator_dict in gen_dict_list]
+#print(gen_dict_list_info)
 
 #Run second pipeline approach with dictionary list for alternative generator
 results_df = run_dict_iter_experiment(gen_dict_list, balancing_methods, classifiers)
