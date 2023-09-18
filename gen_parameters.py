@@ -1,88 +1,5 @@
 import numpy as np
 import scipy.stats as st
-from itertools import product
-"""
-Helper functions
--------------------------------------------------------------------------------------------------------------------------------------------
-"""
-def is_cov_matrix(matrix):
-
-    symmetric = np.allclose(matrix, matrix.T)
-
-    pos_semi_definite = all(np.linalg.eigvals(matrix) > 0)
-
-    return (symmetric and pos_semi_definite)
-
-
-
-def extract_table_info(use_param_dict):
-    params_dict_list = use_param_dict['params_dict_list']
-    
-    n_features = 0
-    for params_dict in params_dict_list:
-
-        if params_dict['modes_c0'] ==1:
-            for param in next(iter(params_dict['params_c0'].values())):
-                if isinstance(param, np.ndarray):
-                    n_features += np.shape(param)[0]
-                else:
-                    n_features += 1
-            
-        else:
-            param = next(iter(params_dict['params_c0'].values()))[0]
-            #print(param, type(param))
-            if isinstance(param, np.ndarray):
-                n_features += np.shape(param)[0]
-            else:
-                n_features += 1
-    
-
-    sizes = use_param_dict['sizes']
-
-    n_samples = sum(sizes)
-    class_ratio = sizes[1]/n_samples
-
-    return (n_features, n_samples, class_ratio)
-
-
-
-
-def format_dict_as_string(input_dict):
-    # Iterate through the key-value pairs and format them as 'key : value' strings
-    formatted_pairs = [f'{key} : {value}' for key, value in input_dict.items()]
-
-    # Join the formatted pairs using ', ' as the separator
-    formatted_string = ', '.join(formatted_pairs)
-
-    return formatted_string
-
-
-
-def create_simple_normal_dict_list(n_samples_list, n_features_list, class_ratio_list, class_distance_list):
-    gen_dict_list = []
-    for n_samples, n_features, class_ratio, distance in product(n_samples_list, n_features_list, class_ratio_list, class_distance_list):
-        
-        gen_dict = {'distributions': [st.multivariate_normal]}
-        gen_dict['sizes'] = [int(n_samples * (1-class_ratio)), int(n_samples * class_ratio)]
-
-        mu_c0 = np.zeros(shape = (n_features,))
-        mu_c1 = np.sqrt(((distance**2) / n_features) * np.ones(shape = (n_features,)))
-        #print(distance, np.linalg.norm(mu_c1))
-
-        sigma_c0 = np.diag(np.ones(shape = (n_features)))
-        sigma_c1 = np.diag(np.ones(shape = (n_features)))
-
-        dist_parameter_dict = [{'modes_c0': 1,
-                                'modes_c1': 1,
-                                'params_c0': {'mean': [mu_c0], 'cov': [sigma_c0]},
-                                'params_c1': {'mean': [mu_c1], 'cov': [sigma_c1]}
-                                }
-        ]
-
-        gen_dict['params_dict_list'] = dist_parameter_dict
-        gen_dict_list.append(gen_dict)
-
-    return gen_dict_list
 
 
 
@@ -291,10 +208,56 @@ for n in range(1, k):
 
 if __name__=="__main__":
 
+    from helper_functions import extract_table_info, extract_dist_substrings, format_dict_as_string, create_simple_normal_dict_list
     table_info = extract_table_info(mixed_3d_test_dict)
 
     #print(table_info)
     #print(extract_table_info(large_normal_test_dict))
-    #print(extract_table_info(default_test_dict))
+    print(extract_table_info(default_test_dict))
+    #print(mixed_3d_test_dict['distributions'])
+    #print(format_dict_as_string(mixed_3d_test_dict))
 
-    print(format_dict_as_string(mixed_3d_test_dict))
+
+    """
+    String representation test
+    -------------------------------------------------------------------------------------------------------------------------------------------
+    
+    distribution_name_map = {
+    'Normal': st.norm,
+    'Beta': st.beta,
+    'Uniform': st.uniform,
+    'Exponential': st.expon,
+    'Chi-Square': st.chi2,
+    # Add more distributions as needed
+    }
+
+
+    # Get the name of the distribution from the dictionary
+    distribution_strings = [str(dist) for dist in mixed_3d_test_dict['distributions']]
+    print(distribution_strings)
+    distribution_names = []
+    for string in distribution_strings:
+        #match = re.search(r'\.(.*?)(?=_gen|$)', string)
+        #match = re.search(r'[^.]+_([^_]+)_gen', string)
+        match = re.search(r'\.([^\.]+)_gen', string)
+        if match:
+            extracted_substring = match.group(1)
+            distribution_names.append(extracted_substring)
+    
+    #distribution_names = extract_dist_substrings(distribution_strings)
+    
+    print(distribution_names)
+    #print(f"The distribution is: {distribution_name}")
+    """
+
+    """
+    Distribution names + parameters
+    -------------------------------------------------------------------------------------------------------------------------------------------
+    """
+    dist_names = st.distributions.__all__
+    #print(dist_names)
+    
+    for dist_name in dist_names:
+        dist = getattr(st, dist_name)
+        #print(dist)
+        

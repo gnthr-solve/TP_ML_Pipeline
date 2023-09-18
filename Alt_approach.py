@@ -5,7 +5,7 @@ import plotly.express as px
 from scipy.stats import linregress
 #from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
-from gen_parameters import extract_table_info
+from helper_functions import extract_table_info, calculate_no_samples
 from itertools import product
 
 
@@ -70,9 +70,12 @@ class Assessor(Data):
         #print((n,d))
 
 
-    def balance(self):
+    def balance(self, bal_params_dict = {}):
 
         a, b, c = self.exp_dim
+        #max_c1 = max([np.sum(self.data_dict['org_y_train'][data_ind] == 1) for data_ind in range(a)])
+        #max_total_samples = max([sum(calculate_no_samples(self.data_dict['org_y_train'][data_ind]).values()) for data_ind in range(a)])
+        #k = max_c1 + max_total_samples
         k = 2 * max([np.sum(self.data_dict['org_y_train'][data_ind] == 0) for data_ind in range(a)]) + 1
         #print(k)
         #print(np.shape(self.data_dict['org_y_train']))
@@ -80,7 +83,7 @@ class Assessor(Data):
         self.data_dict['bal_X_train'] = np.full(shape = (a, b, k, self.d), fill_value = np.nan)
         self.data_dict['bal_y_train'] = np.full(shape = (a, b, k, ), fill_value = np.nan)
 
-        data_balancer = DataBalancer()
+        data_balancer = DataBalancer(bal_params_dict)
         for i in range(a):
 
             data_balancer.balance_data(i)
@@ -139,7 +142,10 @@ class Assessor(Data):
                           for j in range(self.exp_dim[1]) 
                           for k in range(self.exp_dim[2])]
         
+        print(reference_list)
+
         reference_list = [[alist[0], alist[1][0], alist[2][0]] for alist in reference_list]
+        print(reference_list)
 
         reference_df = pd.DataFrame(reference_list, columns= ['dataset', 'balancer', 'classifier'])
 
@@ -565,8 +571,8 @@ if __name__=="__main__":
 
     balancing_methods = {
     "Unbalanced": None,
-    #"ADASYN": ADASYN,
-    #"RandomOverSampler": RandomOverSampler,
+    "ADASYN": ADASYN,
+    "RandomOverSampler": RandomOverSampler,
     "KMeansSMOTE": KMeansSMOTE,
     "SMOTE": SMOTE,
     "BorderlineSMOTE": BorderlineSMOTE,

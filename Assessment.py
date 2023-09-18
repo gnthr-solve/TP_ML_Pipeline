@@ -16,7 +16,8 @@ from Data_Balancer import DataBalancer, DictIterDataBalancer
 from Classifier import Classifier, DictIterClassifier
 from Metrics import IterMetrics
 from Assessors import CorStudy
-from gen_parameters import extract_table_info, create_simple_normal_dict_list,  mixed_3d_test_dict
+from gen_parameters import mixed_3d_test_dict
+from helper_functions import extract_table_info, create_simple_normal_dict_list
 
 
 
@@ -76,7 +77,7 @@ def run_CorStudy_experiment(class_ratio_list, n_samples_list, n_features_list, b
                         #print('Done: ', class_ratio, n_samples, n_features, method, classifier)
 
     print(results_df)
-    results_df.to_csv(f'{exp_title}.csv')
+    results_df.to_csv(f'Experiments\{exp_title}.csv')
                 
                         
     
@@ -101,6 +102,7 @@ def run_dict_iter_experiment(generator_dict_list, balancing_methods, classifiers
         'n_features': [dataset_table_info[0] for _ in range(np.prod(experiment_sizes[1:]))],
         'n_samples': [dataset_table_info[1] for _ in range(np.prod(experiment_sizes[1:]))],
         'class_ratio': [dataset_table_info[2] for _ in range(np.prod(experiment_sizes[1:]))],
+        'distributions': [dataset_table_info[3] for _ in range(np.prod(experiment_sizes[1:]))],
         'balancing_method': [],
         'classifier': [],
         }
@@ -200,7 +202,7 @@ class_distance_list = [3, 2.5, 2, 1.5, 1, 0.5]
 
 
 #Create a dictionary list for the generator with experiment parameters for a standard multivariate normal with variance 1*I
-gen_dict_list = create_simple_normal_dict_list(n_samples_list[1:], n_features_list, class_ratio_list, class_distance_list[4:5])
+gen_dict_list = create_simple_normal_dict_list(n_samples_list[1:], n_features_list, class_ratio_list, class_distance_list[2:3])
 
 #gen_dict_list_info = [extract_table_info(generator_dict) for generator_dict in gen_dict_list]
 #print(gen_dict_list_info)
@@ -209,4 +211,4 @@ gen_dict_list = create_simple_normal_dict_list(n_samples_list[1:], n_features_li
 results_df = run_dict_iter_experiment(gen_dict_list, balancing_methods, classifiers)
 
 print(results_df)
-results_df.to_csv('alt_results.csv')
+results_df.to_csv('Experiments\alt_results.csv')

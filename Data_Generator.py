@@ -53,7 +53,7 @@ class ImbalancedDataGenerator:
             n_informative=int(self.n_features / 2),
             n_redundant=int(self.n_features / 2),
             n_clusters_per_class=1,
-            weights=[self.class_ratio, 1 - self.class_ratio],
+            weights=[1 - self.class_ratio, self.class_ratio],
             #flip_y=self.flip_y,
             class_sep=self.distance,
             random_state=self.random_state
