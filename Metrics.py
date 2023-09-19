@@ -1,7 +1,9 @@
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix, classification_report
 import numpy as np
+import pandas as pd
 import plotly.express as px
 from scipy.stats import linregress
+from helper_tools import Data
 
 
 
@@ -155,12 +157,7 @@ class OwnMetrics():
 
 
 
-
-
-
-
-    
-    
+  
 class IterMetrics():
 
     def __init__(self, 
@@ -314,6 +311,52 @@ class IterMetrics():
 
 
         
+
+
+class FMPL_Metrics(Data):
+
+    def __init__(self, std_metrics_dict):
+
+        self.std_metric_list = [(name, metr_func) for name, metr_func in std_metrics_dict.items()]
+
+        '''
+        self.predictions_dict_list = [
+            {
+                **pred_dict,
+                'predicted_proba': (pred_dict['predicted_proba']
+                                    [:, np.where(pred_dict['classes'] == 1)[0]]
+                                    .flatten()
+                                    )
+            }
+            for pred_dict in predictions_dict_list
+        ]
+        '''
+
+        
+    def confusion_metrics(self):
+
+        y_test = self.data_dict['org_y_test']
+        y_pred = self.data_dict['clsf_predictions_y']
+
+        for (i,j,k) in self.data_dict['assignment_dict']:
+            
+            y_i_test = y_test[i]
+            y_i_test = y_i_test[~np.isnan(y_i_test)]
+
+            y_clsf_pred = y_pred[i, j, k]
+            y_clsf_pred = y_clsf_pred[~np.isnan(y_clsf_pred)]
+
+            evaluation = np.array([metr_func(y_i_test, y_clsf_pred) for (name, metr_func) in self.std_metric_list])
+
+            self.data_dict['std_metrics_res'][i, j, k, :] = evaluation
+
+
+
+
+    def net_benefit(self, harm_to_benefit):
+
+        self.NB = self.TP - harm_to_benefit * self.FP
+
 
 
 

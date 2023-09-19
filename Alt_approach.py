@@ -5,7 +5,7 @@ import plotly.express as px
 from scipy.stats import linregress
 #from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
-from helper_functions import extract_table_info, calculate_no_samples
+from helper_tools import extract_table_info, calculate_no_samples
 from itertools import product
 
 
@@ -70,23 +70,40 @@ class Assessor(Data):
         #print((n,d))
 
 
-    def balance(self, bal_params_dict = {}):
+    def balance(self, bal_params_dicts = {}):
 
         a, b, c = self.exp_dim
-        #max_c1 = max([np.sum(self.data_dict['org_y_train'][data_ind] == 1) for data_ind in range(a)])
-        #max_total_samples = max([sum(calculate_no_samples(self.data_dict['org_y_train'][data_ind]).values()) for data_ind in range(a)])
-        #k = max_c1 + max_total_samples
-        k = 2 * max([np.sum(self.data_dict['org_y_train'][data_ind] == 0) for data_ind in range(a)]) + 1
-        #print(k)
+        y_train = self.data_dict['org_y_train']
+
+        default_strategy = 'auto'
+        max_c1 = max([np.sum(y_train[data_ind] == 1) for data_ind in range(a)])
+        max_total_samples = 0
+
+        for data_ind in range(a):
+            #check if a balancer parameter dict is given
+            if bal_params_dicts:
+                #iterate over the parameter dictionaries that are given
+                for bal_dict in bal_params_dicts.values():
+
+                    max_total_samples = max(max_total_samples, sum(calculate_no_samples(y_train[data_ind], bal_dict['sampling_strategy']).values()))
+
+            #compare to default strategy if not every balancer has a dict
+            if len(bal_params_dicts) < b:
+                max_total_samples = max(max_total_samples, sum(calculate_no_samples(y_train[data_ind], default_strategy).values()))
+        
+        k = max_c1 + max_total_samples
+
+        #k = 2 * max([np.sum(self.data_dict['org_y_train'][data_ind] == 0) for data_ind in range(a)]) + 1
+        print(k)
         #print(np.shape(self.data_dict['org_y_train']))
 
         self.data_dict['bal_X_train'] = np.full(shape = (a, b, k, self.d), fill_value = np.nan)
         self.data_dict['bal_y_train'] = np.full(shape = (a, b, k, ), fill_value = np.nan)
 
-        data_balancer = DataBalancer(bal_params_dict)
-        for i in range(a):
+        data_balancer = DataBalancer(bal_params_dicts)
+        for data_ind in range(a):
 
-            data_balancer.balance_data(i)
+            data_balancer.balance_data(data_ind)
 
         #print(self.data_dict['bal_y_train'])
         #print(self.data_dict['pos_doc'])
@@ -114,7 +131,7 @@ class Assessor(Data):
 
 
 
-    def calc_metrics(self, std_metrics_dict = {}):
+    def calc_metrics(self, std_metrics_dict = {}, results_df = pd.DataFrame()):
 
         default_metrics = {
             'accuracy': accuracy_score,
@@ -142,18 +159,29 @@ class Assessor(Data):
                           for j in range(self.exp_dim[1]) 
                           for k in range(self.exp_dim[2])]
         
+        #print(reference_list)
+
+        reference_list = [extract_table_info(alist[0])+[alist[1][0], alist[2][0]] for alist in reference_list]
         print(reference_list)
 
-        reference_list = [[alist[0], alist[1][0], alist[2][0]] for alist in reference_list]
-        print(reference_list)
+        reference_df = pd.DataFrame(reference_list, columns= ['n_features', 
+                                                              'n_samples', 
+                                                              'class_ratio', 
+                                                              'distributions', 
+                                                              'balancer', 
+                                                              'classifier'])
 
-        reference_df = pd.DataFrame(reference_list, columns= ['dataset', 'balancer', 'classifier'])
+        metrics_df = pd.concat([reference_df, results_df], axis = 1)
 
-        results_df = pd.concat([reference_df, results_df], axis = 1)
-
+        results_df = pd.concat(
+                        [
+                            results_df,
+                            metrics_df
+                        ]
+                    ).reset_index(drop=True)
         
-        print({key: np.shape(value) for key, value in self.data_dict.items()})
-        print(results_df)
+        #print({key: np.shape(value) for key, value in self.data_dict.items()})
+        #print(results_df)
         #print(self.data_dict['classes_order'])
 
         return results_df

@@ -17,7 +17,7 @@ from Classifier import Classifier, DictIterClassifier
 from Metrics import IterMetrics
 from Assessors import CorStudy
 from gen_parameters import mixed_3d_test_dict
-from helper_functions import extract_table_info, create_simple_normal_dict_list
+from helper_tools import extract_table_info, create_simple_normal_dict_list
 
 
 

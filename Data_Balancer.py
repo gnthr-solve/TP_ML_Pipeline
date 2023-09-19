@@ -1,5 +1,5 @@
-
-
+from helper_tools import Data
+import numpy as np
 
 class DataBalancer:
     def __init__(self, balancer=None, random_state=42):
@@ -47,6 +47,66 @@ class DictIterDataBalancer:
         
         return balanced_data
 
+
+
+
+
+
+class FMPL_DataBalancer(Data):
+
+    def __init__(self, bal_params_dict = {}):
+
+        self.balancer_dict = {(i,j): assign_list[1] for (i,j,k), assign_list in self.data_dict['assignment_dict'].items()}
+        
+        default_dict = {'sampling_strategy': 'auto', 'random_state': 42}
+        self.bal_params_dict = {name: bal_params_dict[name]
+                                if name in bal_params_dict else default_dict
+                                for (name, bal) in self.balancer_dict.values()}
+        
+        
+
+    def balance_data(self, data_ind):
+
+        X = self.data_dict['org_X_train']
+        y = self.data_dict['org_y_train']
+
+        for (data_ind, bal_ind), (name, balancer) in self.balancer_dict.items():
+
+            #n_train, d_train = train_shape_list[data_ind]
+
+            X_bal = X[data_ind]
+            y_bal = y[data_ind]
+            #print("Original X shape: \n", np.shape(X_bal))
+            #print("Original y shape: \n", np.shape(y_bal))
+            #print("Original X: \n", X_bal[:5])
+            #print("Original y: \n", y_bal[:5])
+            
+            # Drop rows with NaN values
+            X_bal = X_bal[~np.isnan(X_bal).all(axis = 1)]
+            # Drop columns with NaN values
+            X_bal = X_bal[: , ~np.isnan(X_bal).all(axis = 0)]
+            y_bal = y_bal[~np.isnan(y_bal)]
+            #print("Filtered X shape: \n", np.shape(X_bal))
+            #print("Filtered y shape: \n", np.shape(y_bal))
+            #print("Filtered X: \n", X_bal[:5])
+            #print("Filtered y: \n", y_bal[:5])
+
+
+            if balancer == None:
+                resample = (X_bal,y_bal)
+
+            else:
+                balancer = balancer(**self.bal_params_dict[name])
+                resample = balancer.fit_resample(X_bal, y_bal)
+
+            n, d = np.shape(resample[0])
+            #self.data_dict['bal_shape_dict'][(data_ind, bal_ind)] = (n, d)
+            #print(n, d)
+            
+            self.data_dict['bal_X_train'][data_ind, bal_ind, :n, :d] = resample[0]
+            self.data_dict['bal_y_train'][data_ind, bal_ind, :n] = resample[1]
+
+            
 
 
 

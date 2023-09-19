@@ -5,6 +5,9 @@ import scipy.special as sp
 import plotly.express as px
 from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
+from helper_tools import Data
+
+
 
 class ImbalancedDataGenerator:
     def __init__(self, 
@@ -213,6 +216,129 @@ class Multi_Modal_Dist_Generator:
 
 
 
+
+
+
+
+class FMPL_Generator(Data):
+    
+    def __init__(self, distributions, params_dict_list, sizes, gen_index, random_state = 1234):
+        self.sizes = sizes
+        self.dists = distributions
+        self.params_dict_list = params_dict_list
+        self.gen_index = gen_index
+        self.random_state = random_state
+
+
+    def create_data(self):
+        
+        self.dists_sample_lists = {'c0': [], 'c1': []}
+        
+        for l, parameters_dict in enumerate(self.params_dict_list):
+            #print(parameters_dict.values())
+
+            for i in range(2):
+
+                if (modes:=parameters_dict[f'modes_c{i}']) > 1:
+                    
+                    self.create_multimodal_features(c_id = i, 
+                                                    dist = self.dists[l], 
+                                                    params_dict = parameters_dict[f'params_c{i}'], 
+                                                    modes = modes, 
+                                                    mixing_weights = parameters_dict[f'mixing_weights_c{i}'])
+
+                else:
+                    self.create_unimodal_features(c_id = i, 
+                                                  dist = self.dists[l], 
+                                                  params_dict = parameters_dict[f'params_c{i}'] )
+        
+
+        self.dists_sample_lists = {key: [array if len(array.shape)==2 else array.reshape(-1, 1) for array in sample_features_list]
+                                   for key, sample_features_list in self.dists_sample_lists.items()}
+        
+        X_c0 = np.concatenate(self.dists_sample_lists['c0'], axis = 1)
+        X_c1 = np.concatenate(self.dists_sample_lists['c1'], axis = 1)
+        #print(X_c1)
+
+        y_c0 = np.zeros(self.sizes[0])
+        y_c1 = np.ones(self.sizes[1])
+
+        self.X = np.concatenate( (X_c0, X_c1), axis = 0)
+        self.y = np.concatenate( (y_c0, y_c1), axis = 0)
+
+        # Generate a random permutation of indices
+        permuted_indices = np.random.permutation(len(self.X))
+
+        self.X = self.X[permuted_indices]
+        self.y = self.y[permuted_indices]
+                
+
+
+    def create_multimodal_features(self, c_id, dist, params_dict, modes, mixing_weights):
+
+        size = self.sizes[c_id]
+
+        k = modes
+
+        multinomial = st.multinomial(size, mixing_weights)
+        comp_sizes = multinomial.rvs(size = 1)[0]
+
+        acc_list = []
+
+        for i in range(k):
+
+            params = {key: value[i] for key, value in params_dict.items()}
+
+            frozen_dist = dist(**params)
+
+            acc_list.append(frozen_dist.rvs(size = comp_sizes[i]))
+
+        feature_samples = np.concatenate( acc_list, axis = 0)
+
+        self.dists_sample_lists[f'c{c_id}'].append(feature_samples)
+        
+
+
+    def create_unimodal_features(self, c_id, dist, params_dict):
+
+        size = self.sizes[c_id]
+
+        k = len(next(iter(params_dict.values())))
+
+        sample_features_list = []
+
+        for i in range(k):
+
+            params = {key: value[i] for key, value in params_dict.items()}
+
+            frozen_dist = dist(**params)
+
+            sample_features_list.append(frozen_dist.rvs(size = size))
+
+        self.dists_sample_lists[f'c{c_id}'].extend(sample_features_list)
+
+            
+    
+    def prepare_data(self, test_size = 0.2):
+        
+        self.create_data()
+        
+        X_train, X_test, y_train, y_test= train_test_split(
+                                                            self.X, 
+                                                            self.y, 
+                                                            test_size = test_size, 
+                                                            random_state=self.random_state
+                                                            )
+        
+        n_train, d = np.shape(X_train)
+        n_test = np.shape(y_test)[0]
+        #print(n_train, d, n_test)
+
+        self.data_dict['org_X_train'][self.gen_index, :n_train, :d] = X_train
+        self.data_dict['org_y_train'][self.gen_index, :n_train] = y_train
+
+        self.data_dict['org_X_test'][self.gen_index, :n_test, :d] = X_test
+        self.data_dict['org_y_test'][self.gen_index, :n_test] = y_test
 
 
 

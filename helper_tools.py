@@ -52,7 +52,7 @@ def extract_table_info(use_param_dict):
     n_samples = sum(sizes)
     class_ratio = sizes[1]/n_samples
 
-    return (n_features, n_samples, class_ratio, dist_doc_string)
+    return [n_features, n_samples, class_ratio, dist_doc_string]
 
 
 
@@ -165,6 +165,16 @@ def calculate_no_samples(y, sampling_strategy):
     return result
 
 
+
+
+"""
+Helper Classes
+-------------------------------------------------------------------------------------------------------------------------------------------
+"""
+
+class Data():
+
+    data_dict = {}
 
 
 

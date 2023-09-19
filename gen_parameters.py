@@ -208,7 +208,7 @@ for n in range(1, k):
 
 if __name__=="__main__":
 
-    from helper_functions import extract_table_info, extract_dist_substrings, format_dict_as_string, create_simple_normal_dict_list
+    from helper_tools import extract_table_info, extract_dist_substrings, format_dict_as_string, create_simple_normal_dict_list
     table_info = extract_table_info(mixed_3d_test_dict)
 
     #print(table_info)
