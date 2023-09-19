@@ -135,13 +135,18 @@ class Multi_Modal_Dist_Generator:
                                                   dist = self.dists[l], 
                                                   params_dict = parameters_dict[f'params_c{i}'] )
         
-
-        self.dists_sample_lists = {key: [array if len(array.shape)==2 else array.reshape(-1, 1) for array in sample_features_list]
+        #print(self.dists_sample_lists)
+        #if len(array.shape)==2 else array.reshape(-1, 1)
+        self.dists_sample_lists = {key: [array for array in sample_features_list]
                                    for key, sample_features_list in self.dists_sample_lists.items()}
         
+        #print(self.dists_sample_lists)
         X_c0 = np.concatenate(self.dists_sample_lists['c0'], axis = 1)
         X_c1 = np.concatenate(self.dists_sample_lists['c1'], axis = 1)
-        #print(X_c1)
+        #print('Class 1: \n', X_c1)
+        #print('Class 1 shape: \n', np.shape(X_c1))
+        #print('Class 0: \n', X_c0)
+        #print('Class 0 shape: \n', np.shape(X_c0))
 
         y_c0 = np.zeros(self.sizes[0])
         y_c1 = np.ones(self.sizes[1])
@@ -178,6 +183,8 @@ class Multi_Modal_Dist_Generator:
 
         feature_samples = np.concatenate( acc_list, axis = 0)
 
+        feature_samples = feature_samples.reshape(size, -1)
+
         self.dists_sample_lists[f'c{c_id}'].append(feature_samples)
         
 
@@ -197,6 +204,8 @@ class Multi_Modal_Dist_Generator:
             frozen_dist = dist(**params)
 
             sample_features_list.append(frozen_dist.rvs(size = size))
+
+        sample_features_list = [sample.reshape(size, -1) for sample in sample_features_list]
 
         self.dists_sample_lists[f'c{c_id}'].extend(sample_features_list)
 
@@ -252,13 +261,16 @@ class FMPL_Generator(Data):
                                                   dist = self.dists[l], 
                                                   params_dict = parameters_dict[f'params_c{i}'] )
         
-
-        self.dists_sample_lists = {key: [array if len(array.shape)==2 else array.reshape(-1, 1) for array in sample_features_list]
+        # if len(array.shape)==2 else array.reshape(-1, 1) 
+        self.dists_sample_lists = {key: [array for array in sample_features_list]
                                    for key, sample_features_list in self.dists_sample_lists.items()}
         
         X_c0 = np.concatenate(self.dists_sample_lists['c0'], axis = 1)
         X_c1 = np.concatenate(self.dists_sample_lists['c1'], axis = 1)
-        #print(X_c1)
+        #print('Class 1: \n', X_c1)
+        #print('Class 1 shape: \n', np.shape(X_c1))
+        #print('Class 0: \n', X_c0)
+        #print('Class 0 shape: \n', np.shape(X_c0))
 
         y_c0 = np.zeros(self.sizes[0])
         y_c1 = np.ones(self.sizes[1])
@@ -294,6 +306,7 @@ class FMPL_Generator(Data):
             acc_list.append(frozen_dist.rvs(size = comp_sizes[i]))
 
         feature_samples = np.concatenate( acc_list, axis = 0)
+        feature_samples = feature_samples.reshape(size, -1)
 
         self.dists_sample_lists[f'c{c_id}'].append(feature_samples)
         
@@ -314,6 +327,8 @@ class FMPL_Generator(Data):
             frozen_dist = dist(**params)
 
             sample_features_list.append(frozen_dist.rvs(size = size))
+
+        sample_features_list = [sample.reshape(size, -1) for sample in sample_features_list]
 
         self.dists_sample_lists[f'c{c_id}'].extend(sample_features_list)
 
@@ -391,14 +406,14 @@ if __name__ == "__main__":
                             }
     ]
 
-    size = [90, 10]
+    size = [19, 1]
 
 
 
     """
     Test and Comparison Multi_Modal_Dist_Generator
     -------------------------------------------------------------------------------------------------------------------------------------------
-    
+    """
     dist_gen_spec = Multi_Modal_Dist_Generator(distributions, dist_parameter_dicts, size)
 
     #dist_gen_spec.create_data()
@@ -409,13 +424,13 @@ if __name__ == "__main__":
     print(spec_samples, '\n')
 
 
-
+    '''
     #dist_gen_sklearn = ImbalancedDataGenerator(class_ratio= 1-0.001, n_samples= 1000, n_features=5, flip_y=0.1)
     dist_gen_sklearn = ImbalancedDataGenerator(class_ratio= 1-0.001, n_samples= 1000, n_features=5)
 
     X_train, X_test, y_train, y_test = dist_gen_sklearn.generate_data()
     
-
+    
     # If one uses flip_y = 0.1 then many more samples than expected exist of the minority class (44 if one uses 1 as minority with random state 123).
     # If one leaves the argument out exactly 1 exists (as expected). However then we get either a training or
     # a testset without minority class ---> Error in balancers (if no min. in training) or Error in Metrics (if no min. in test)
@@ -426,14 +441,14 @@ if __name__ == "__main__":
     n_1_train = np.sum(y_train_1_mask)
     print('Number of C1 in Train: \n', n_1_train)
     print('Number of C1 in Test: \n', n_1_test)
-    """
+    '''
 
 
     """
     Test create_simple_normal_dict_list
     -------------------------------------------------------------------------------------------------------------------------------------------
-    """
-    from gen_parameters import create_simple_normal_dict_list
+    
+    from helper_tools import create_simple_normal_dict_list
     from Visualiser import RawVisualiser
 
     visualiser = RawVisualiser()
@@ -469,3 +484,5 @@ if __name__ == "__main__":
                                                         feature2 = 1,
                                                         feature3 = 2,
                                                         title = f'3d Scatter of generated Data')
+
+    """

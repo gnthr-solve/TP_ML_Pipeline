@@ -93,6 +93,7 @@ class Assessor(Data):
         
         trainset_size = int((1-test_size)*n)
         testset_size = int(test_size*n)
+        print('Size X array: \n', a*n*self.d)
 
         self.data_dict['org_X_train'] = np.full(shape = (a, trainset_size, self.d), fill_value = np.nan)
         self.data_dict['org_y_train'] = np.full(shape = (a, trainset_size,), fill_value = np.nan)
@@ -135,8 +136,9 @@ class Assessor(Data):
         k = max_c1 + max_total_samples
 
         #k = 2 * max([np.sum(self.data_dict['org_y_train'][data_ind] == 0) for data_ind in range(a)]) + 1
-        print(k)
+        #print(k)
         #print(np.shape(self.data_dict['org_y_train']))
+        print('Size balance array X: \n', a*b*k*self.d)
 
         self.data_dict['bal_X_train'] = np.full(shape = (a, b, k, self.d), fill_value = np.nan)
         self.data_dict['bal_y_train'] = np.full(shape = (a, b, k, ), fill_value = np.nan)
@@ -160,7 +162,7 @@ class Assessor(Data):
         self.data_dict['clsf_predictions_proba'] = np.full(shape = self.exp_dim + (n, 2), fill_value = np.nan)
         self.data_dict['classes_order'] = np.full(shape = self.exp_dim + (2,), fill_value = np.nan)
 
-
+        print('Size classifier array: \n', self.exp_dim[0]*self.exp_dim[1]*self.exp_dim[2]*n*2)
         data_classifier = FMPL_DataClassifier()
 
         data_classifier.fit()
@@ -172,7 +174,7 @@ class Assessor(Data):
 
 
 
-    def calc_metrics(self, std_metrics_dict = {}, results_df = pd.DataFrame()):
+    def calc_metrics(self, std_metrics_dict = {}):
 
         default_metrics = {
             'accuracy': accuracy_score,
@@ -212,14 +214,7 @@ class Assessor(Data):
                                                               'balancer', 
                                                               'classifier'])
 
-        metrics_df = pd.concat([reference_df, results_df], axis = 1)
-
-        results_df = pd.concat(
-                        [
-                            results_df,
-                            metrics_df
-                        ]
-                    ).reset_index(drop=True)
+        results_df = pd.concat([reference_df, results_df], axis = 1)
         
         #print({key: np.shape(value) for key, value in self.data_dict.items()})
         #print(results_df)
