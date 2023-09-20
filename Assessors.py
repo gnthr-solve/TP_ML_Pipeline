@@ -138,15 +138,15 @@ class Assessor(Data):
         #k = 2 * max([np.sum(self.data_dict['org_y_train'][data_ind] == 0) for data_ind in range(a)]) + 1
         #print(k)
         #print(np.shape(self.data_dict['org_y_train']))
-        print('Size balance array X: \n', a*b*k*self.d)
+        print('Number of individual balancing steps: \n', a*b,
+              'Size balance array X: \n', a*b*k*self.d)
 
         self.data_dict['bal_X_train'] = np.full(shape = (a, b, k, self.d), fill_value = np.nan)
         self.data_dict['bal_y_train'] = np.full(shape = (a, b, k, ), fill_value = np.nan)
 
         data_balancer = FMPL_DataBalancer(bal_params_dicts)
-        for data_ind in range(a):
-
-            data_balancer.balance_data(data_ind)
+        
+        data_balancer.balance_data()
 
         #print(self.data_dict['bal_y_train'])
         #print(self.data_dict['pos_doc'])

@@ -65,7 +65,7 @@ class FMPL_DataBalancer(Data):
         
         
 
-    def balance_data(self, data_ind):
+    def balance_data(self):
 
         X = self.data_dict['org_X_train']
         y = self.data_dict['org_y_train']
