@@ -7,7 +7,16 @@ from scipy.stats import linregress
 from sklearn.model_selection import train_test_split
 from helper_tools import extract_table_info, calculate_no_samples
 from itertools import product
+import time
 
+def timing_decorator(func):
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        end_time = time.time()
+        print(f"{func.__name__} took {end_time - start_time} seconds")
+        return result
+    return wrapper
 
 
 class Data():
@@ -19,6 +28,7 @@ class Data():
 
 class Assessor(Data):
 
+    @timing_decorator
     def __init__(self, test_size, generation_dict_list, balancers_dict, classifiers_dict):
 
         Data.data_dict = {}
@@ -40,7 +50,7 @@ class Assessor(Data):
                                                         )
                                             }
 
-
+    @timing_decorator
     def generate(self):     
 
         test_size = self.test_size
@@ -70,6 +80,7 @@ class Assessor(Data):
         #print((n,d))
 
 
+    @timing_decorator
     def balance(self, bal_params_dicts = {}):
 
         a, b, c = self.exp_dim
@@ -94,8 +105,10 @@ class Assessor(Data):
         k = max_c1 + max_total_samples
 
         #k = 2 * max([np.sum(self.data_dict['org_y_train'][data_ind] == 0) for data_ind in range(a)]) + 1
-        print(k)
+        #print(k)
         #print(np.shape(self.data_dict['org_y_train']))
+        print('Number of individual balancing steps: \n', a*b, '\n',
+              'Size balance array X: \n', a*b*k*self.d)
 
         self.data_dict['bal_X_train'] = np.full(shape = (a, b, k, self.d), fill_value = np.nan)
         self.data_dict['bal_y_train'] = np.full(shape = (a, b, k, ), fill_value = np.nan)
@@ -109,7 +122,7 @@ class Assessor(Data):
         #print({key: np.shape(value) for key, value in self.data_dict.items()})
         
 
-
+    @timing_decorator
     def clsf_pred(self):
 
         a, n = np.shape(self.data_dict['org_y_test'])
@@ -118,18 +131,19 @@ class Assessor(Data):
         self.data_dict['clsf_predictions_proba'] = np.full(shape = self.exp_dim + (n, 2), fill_value = np.nan)
         self.data_dict['classes_order'] = np.full(shape = self.exp_dim + (2,), fill_value = np.nan)
 
-
+        print('Number of classifiers to train: \n', self.exp_dim[0]*self.exp_dim[1]*self.exp_dim[2], '\n',
+              'Size classifier array: \n', self.exp_dim[0]*self.exp_dim[1]*self.exp_dim[2]*n*2)
         data_classifier = DataClassifier()
 
         data_classifier.fit()
 
         data_classifier.predict()
 
-        print({key: np.shape(value) for key, value in self.data_dict.items()})
+        #print({key: np.shape(value) for key, value in self.data_dict.items()})
         #print(self.data_dict['classes_order'])
 
 
-
+    @timing_decorator
     def calc_metrics(self, std_metrics_dict = {}):
 
         default_metrics = {
@@ -161,7 +175,7 @@ class Assessor(Data):
         #print(reference_list)
 
         reference_list = [extract_table_info(alist[0])+[alist[1][0], alist[2][0]] for alist in reference_list]
-        print(reference_list)
+        #print(reference_list)
 
         reference_df = pd.DataFrame(reference_list, columns= ['n_features', 
                                                               'n_samples', 
@@ -170,7 +184,7 @@ class Assessor(Data):
                                                               'balancer', 
                                                               'classifier'])
 
-        metrics_df = pd.concat([reference_df, results_df], axis = 1)
+        results_df = pd.concat([reference_df, results_df], axis = 1)
 
         
         
@@ -219,7 +233,7 @@ class Generator(Data):
                                                   params_dict = parameters_dict[f'params_c{i}'] )
         
 
-        self.dists_sample_lists = {key: [array if len(array.shape)==2 else array.reshape(-1, 1) for array in sample_features_list]
+        self.dists_sample_lists = {key: [array for array in sample_features_list]
                                    for key, sample_features_list in self.dists_sample_lists.items()}
         
         X_c0 = np.concatenate(self.dists_sample_lists['c0'], axis = 1)
@@ -260,6 +274,7 @@ class Generator(Data):
             acc_list.append(frozen_dist.rvs(size = comp_sizes[i]))
 
         feature_samples = np.concatenate( acc_list, axis = 0)
+        feature_samples = feature_samples.reshape(size, -1)
 
         self.dists_sample_lists[f'c{c_id}'].append(feature_samples)
         
@@ -280,6 +295,8 @@ class Generator(Data):
             frozen_dist = dist(**params)
 
             sample_features_list.append(frozen_dist.rvs(size = size))
+
+        sample_features_list = [sample.reshape(size, -1) for sample in sample_features_list]
 
         self.dists_sample_lists[f'c{c_id}'].extend(sample_features_list)
 
@@ -633,21 +650,20 @@ if __name__=="__main__":
     Assessor test
     -------------------------------------------------------------------------------------------------------------------------------------------
     """
-    
+    results_df = pd.DataFrame()
     assessor = Assessor(0.2, [mixed_3d_test_dict, mixed_test_dict], balancing_methods, classifiers_dict)
 
     assessor.generate()
     assessor.balance()
     assessor.clsf_pred()
-    assessor.calc_metrics()
-    '''
-    results_df = pd.concat(
-                        [
-                            results_df,
-                            metrics_df
-                        ]
-                    ).reset_index(drop=True)
+    new_results_df = assessor.calc_metrics()
 
-    '''
+    #print(new_results_df)
+    results_df = pd.concat([results_df, new_results_df],
+                           ignore_index=True,
+                           axis = 0).reset_index(drop=True)
+    
+    print(results_df)
+   
 
     
