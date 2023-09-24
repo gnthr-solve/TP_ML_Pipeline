@@ -144,7 +144,7 @@ class Assessor(Data):
 
 
     @timing_decorator
-    def calc_metrics(self, std_metrics_dict = {}):
+    def calc_std_metrics(self, std_metrics_dict = {}):
 
         default_metrics = {
             'accuracy': accuracy_score,
@@ -656,7 +656,7 @@ if __name__=="__main__":
     assessor.generate()
     assessor.balance()
     assessor.clsf_pred()
-    new_results_df = assessor.calc_metrics()
+    new_results_df = assessor.calc_std_metrics()
 
     #print(new_results_df)
     results_df = pd.concat([results_df, new_results_df],

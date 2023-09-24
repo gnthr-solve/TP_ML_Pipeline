@@ -52,7 +52,7 @@ class DictIterDataBalancer:
 
 
 
-class FMPL_DataBalancer(Data):
+class FMLP_DataBalancer(Data):
 
     def __init__(self, bal_params_dict = {}):
 

@@ -85,7 +85,7 @@ class DictIterClassifier(BaseEstimator, ClassifierMixin):
 
 
 
-class FMPL_DataClassifier(Data):
+class FMLP_DataClassifier(Data):
 
     def __init__(self, clsf_params_dict = {}):
 

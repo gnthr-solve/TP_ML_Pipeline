@@ -313,7 +313,7 @@ class IterMetrics():
         
 
 
-class FMPL_Metrics(Data):
+class FMLP_Metrics(Data):
 
     def __init__(self, std_metrics_dict):
 

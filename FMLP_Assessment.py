@@ -99,7 +99,7 @@ for distance in class_distance_list[:1]:
     assessor.balance()
     assessor.clsf_pred()
 
-    new_results_df = assessor.calc_metrics()
+    new_results_df = assessor.calc_std_metrics()
     
     new_results_df['cluster distance'] = [distance for _ in range(len(new_results_df))]
 

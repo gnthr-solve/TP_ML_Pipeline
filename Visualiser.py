@@ -42,7 +42,13 @@ class RawVisualiser:
         #return fig
     
 
-    def plot_2d_scatter_multiple_datasets_go(self, datasets, feature1=0, feature2=1, title="2D Scatter Plot", color_sequence=None):
+    def plot_2d_scatter_multiple_datasets_go(self, 
+                                             datasets, 
+                                             feature1=0, 
+                                             feature2=1, 
+                                             title="2D Scatter Plot", 
+                                             color_sequence=None,
+                                             save = False):
         """
         Create a 2D scatter plot for multiple datasets.
 
@@ -108,11 +114,19 @@ class RawVisualiser:
             legend=dict(x=0.85, y=1.0),
         )
 
+        if save:
+            fig.write_image(f"Figures/{title}.png")
+
         fig.show()
 
 
 
-    def plot_2d_scatter_multiple_datasets_px(self, datasets, feature1=0, feature2=1, title="2D Scatter Plot"):
+    def plot_2d_scatter_multiple_datasets_px(self, 
+                                             datasets, 
+                                             feature1=0, 
+                                             feature2=1, 
+                                             title="2D Scatter Plot",
+                                             save = False):
         """
         Create a 2D scatter plot for multiple datasets.
 
@@ -157,6 +171,13 @@ class RawVisualiser:
             yaxis_title=f'Feature {feature2}',
             legend=dict(x=0.85, y=1.0),
         )
+
+        if save:
+            fig.write_image(f"Figures/{title}.png", 
+                            width=1920, 
+                            height=1080, 
+                            scale=3
+                            )
 
         fig.show()
 

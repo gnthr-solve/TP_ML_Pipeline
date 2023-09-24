@@ -3,10 +3,10 @@ import numpy as np
 import pandas as pd
 from itertools import product
 from helper_tools import Data, extract_table_info, calculate_no_samples
-from Data_Generator import FMPL_Generator
-from Data_Balancer import FMPL_DataBalancer
-from Classifier import FMPL_DataClassifier
-from Metrics import FMPL_Metrics
+from Data_Generator import FMLP_Generator
+from Data_Balancer import FMLP_DataBalancer
+from Classifier import FMLP_DataClassifier
+from Metrics import FMLP_Metrics
 
 
 
@@ -103,7 +103,7 @@ class Assessor(Data):
 
         for i, generation_dict in enumerate(self.generation_dict_list):
             generation_dict['gen_index'] = i
-            generator = FMPL_Generator(**generation_dict)
+            generator = FMLP_Generator(**generation_dict)
             generator.prepare_data(self.test_size)
 
         #print(self.data_dict)
@@ -144,7 +144,7 @@ class Assessor(Data):
         self.data_dict['bal_X_train'] = np.full(shape = (a, b, k, self.d), fill_value = np.nan)
         self.data_dict['bal_y_train'] = np.full(shape = (a, b, k, ), fill_value = np.nan)
 
-        data_balancer = FMPL_DataBalancer(bal_params_dicts)
+        data_balancer = FMLP_DataBalancer(bal_params_dicts)
         
         data_balancer.balance_data()
 
@@ -163,7 +163,7 @@ class Assessor(Data):
         self.data_dict['classes_order'] = np.full(shape = self.exp_dim + (2,), fill_value = np.nan)
 
         print('Size classifier array: \n', self.exp_dim[0]*self.exp_dim[1]*self.exp_dim[2]*n*2)
-        data_classifier = FMPL_DataClassifier()
+        data_classifier = FMLP_DataClassifier()
 
         data_classifier.fit()
 
@@ -174,7 +174,7 @@ class Assessor(Data):
 
 
 
-    def calc_metrics(self, std_metrics_dict = {}):
+    def calc_std_metrics(self, std_metrics_dict = {}):
 
         default_metrics = {
             'accuracy': accuracy_score,
@@ -189,7 +189,7 @@ class Assessor(Data):
 
         self.data_dict['std_metrics_res'] = np.full(shape = self.exp_dim + (len(metrics_dict),), fill_value = np.nan)
         
-        metrics = FMPL_Metrics(metrics_dict)
+        metrics = FMLP_Metrics(metrics_dict)
 
         metrics.confusion_metrics()
 
