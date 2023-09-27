@@ -186,8 +186,6 @@ class Assessor(Data):
 
         results_df = pd.concat([reference_df, results_df], axis = 1)
 
-        
-        
         #print({key: np.shape(value) for key, value in self.data_dict.items()})
         #print(results_df)
         #print(self.data_dict['classes_order'])
@@ -195,6 +193,12 @@ class Assessor(Data):
         return results_df
 
 
+    @timing_decorator
+    def create_calibration_curves(self, m = 10, save = False, title = f'Calibration Curves'):
+
+        metrics = Metrics({})
+
+        metrics.calibration_curve_fmlp(m = 10, save = False, title = f'Calibration Curves')
 
 
 
@@ -461,19 +465,6 @@ class Metrics(Data):
 
         self.std_metric_list = [(name, metr_func) for name, metr_func in std_metrics_dict.items()]
 
-        '''
-        self.predictions_dict_list = [
-            {
-                **pred_dict,
-                'predicted_proba': (pred_dict['predicted_proba']
-                                    [:, np.where(pred_dict['classes'] == 1)[0]]
-                                    .flatten()
-                                    )
-            }
-            for pred_dict in predictions_dict_list
-        ]
-        '''
-
         
     def confusion_metrics(self):
 
@@ -494,13 +485,76 @@ class Metrics(Data):
 
 
 
-
     def net_benefit(self, harm_to_benefit):
 
         self.NB = self.TP - harm_to_benefit * self.FP
 
 
+
+    def calibration_curve_fmlp(self, m = 10, save = False, title = f'Calibration Curves'):
+        predicted_proba_raw = self.data_dict['clsf_predictions_proba']
+        class_orders = self.data_dict['classes_order']
+
+        names_dict = {key: [*list(map(str, extract_table_info(assign_list[0]))), 
+                            assign_list[1][0], 
+                            assign_list[2][0]]
+                      for key, assign_list in self.data_dict['assignment_dict'].items()}
+        
+        names_dict = {key: ', '.join(doc_list) for key, doc_list in names_dict.items()}
+
+        creation_dict ={
+        'mean_pred_proba': [np.arange(0,1, 1/m)],
+        'mean_freq': [np.arange(0,1, 1/m)],
+        'name': [['Optimum' for _ in range(m)]]
+        }
+        for (i,j,k) in self.data_dict['assignment_dict']:
+
+            pred_probabilities = predicted_proba_raw[i, j, k]
+            corr_classes = class_orders[i, j, k]
+
+            pred_proba = pred_probabilities[:, np.where(corr_classes == 1)[0]].flatten()
+            
+            sorted_indices = np.argsort(pred_proba)
+            sorted_probabilities = pred_proba[sorted_indices]
+            sorted_y_test = self.y_test[sorted_indices]
+
+            binned_probabilities = np.array_split(sorted_probabilities, m)
+            binned_y_test = np.array_split(sorted_y_test, m)
+
+            creation_dict['mean_pred_proba'].append([bin.sum()/len(bin) for bin in binned_probabilities])
+            creation_dict['mean_freq'].append([bin.sum()/len(bin) for bin in binned_y_test])
+            creation_dict['name'].append([names_dict[(i,j,k)] for _ in range(m)])
+
+        
+        #print(creation_dict['name'])
+        df_creation_dict = {
+            'Predicted Prob.': np.concatenate(creation_dict['mean_pred_proba']),
+            'Mean Frequency': np.concatenate(creation_dict['mean_freq']),
+            'Name': sum(creation_dict['name'], [])
+        }
+
+        df = pd.DataFrame(df_creation_dict)
+        print(df)
+
+        fig = px.line(df, 
+                      x = 'Predicted Prob.', 
+                      y = 'Mean Frequency', 
+                      color = 'Name', 
+                      title = title +f'({m} bins)', 
+                      markers = True
+                      )
+        
+        if save:
+            fig.write_image(f"Figures/'{title}'.png", 
+                            width=1920, 
+                            height=1080, 
+                            scale=3
+                            )
+            
+        fig.show()
+
     
+
     def calibration_curve(self, k = 10):
 
         predicted_probabilities = [pred_dict['predicted_proba'] for pred_dict in self.predictions_dict_list]
@@ -650,12 +704,16 @@ if __name__=="__main__":
     Assessor test
     -------------------------------------------------------------------------------------------------------------------------------------------
     """
-    results_df = pd.DataFrame()
+    
     assessor = Assessor(0.2, [mixed_3d_test_dict, mixed_test_dict], balancing_methods, classifiers_dict)
 
     assessor.generate()
     assessor.balance()
     assessor.clsf_pred()
+
+    #calc_std_metrics() test
+    #-------------------------------------------------------------------------------------------------------------------------------------------
+    results_df = pd.DataFrame()
     new_results_df = assessor.calc_std_metrics()
 
     #print(new_results_df)
@@ -665,5 +723,8 @@ if __name__=="__main__":
     
     print(results_df)
    
-
+    #calibration curves test
+    #-------------------------------------------------------------------------------------------------------------------------------------------
+    
+    assessor.create_calibration_curves()
     

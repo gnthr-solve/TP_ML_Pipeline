@@ -10,7 +10,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 from sklearn.naive_bayes import GaussianNB
 from xgboost import XGBClassifier
-#from lightgbm import LGBMClassifier
+from lightgbm import LGBMClassifier
 from Data_Generator import ImbalancedDataGenerator, Multi_Modal_Dist_Generator
 from Data_Balancer import DataBalancer, DictIterDataBalancer
 from Classifier import Classifier, DictIterClassifier
@@ -167,7 +167,7 @@ def run_dict_iter_experiment(generator_dict_list, balancing_methods, classifiers
 
 
 """
-Execute
+Methods and Parameters for serialised execution
 -------------------------------------------------------------------------------------------------------------------------------------------
 """
 balancing_methods = {
@@ -177,7 +177,7 @@ balancing_methods = {
 #"KMeansSMOTE": KMeansSMOTE,
 "SMOTE": SMOTE,
 "BorderlineSMOTE": BorderlineSMOTE,
-#"SVMSMOTE": SVMSMOTE,
+"SVMSMOTE": SVMSMOTE,
 #"SMOTENC": SMOTENC,
 }
 
@@ -188,7 +188,7 @@ classifiers = {
     #"SVC": SVC,
     #"Naive Bayes": GaussianNB,
     "XGboost": XGBClassifier,
-    # "Lightgbm": LGBMClassifier
+    "Lightgbm": LGBMClassifier
 }
 
 class_ratio_list = [0.1, 0.01, 0.001]
@@ -197,6 +197,10 @@ n_features_list = range(5, 50, 5)
 class_distance_list = [3, 2.5, 2, 1.5, 1, 0.5]
 
 
+"""
+Execute serialised tests
+-------------------------------------------------------------------------------------------------------------------------------------------
+"""
 #Uncomment to run first pipeline
 #run_CorStudy_experiment(class_ratio_list[:1], n_samples_list[1:2], n_features_list[:], balancing_methods, classifiers, 'feature_range_experiment')
 
@@ -212,3 +216,11 @@ results_df = run_dict_iter_experiment(gen_dict_list, balancing_methods, classifi
 
 print(results_df)
 results_df.to_csv('Experiments/test_results.csv')
+
+
+"""
+Timing tests
+-------------------------------------------------------------------------------------------------------------------------------------------
+"""
+class_ratio_list = [0.1, 0.01, 0.001]
+n_samples_list = [10e5]
