@@ -4,6 +4,53 @@ import scipy.stats as st
 
 
 """
+Bimodal Multinormal Experiment for Report
+-------------------------------------------------------------------------------------------------------------------------------------------
+"""
+#set the parameter dictionary for the MV normal. sigma is the standard deviation
+n = 15
+k = 2
+mu_c0_1 = np.zeros(shape = (n))
+mu_c0_2 = np.concatenate([4*np.ones(shape = (k)),np.zeros(shape = (n-k))])
+mu_c1_1 = 4*np.ones(shape = (n))
+#mu_c1_2 =  2 * np.ones(shape = (n))
+
+sigma_c0_1 = np.array([[1,0],
+                       [0,3]])
+sigma_c0_2 = np.array([[1,0],
+                       [0,1]])
+sigma_c0_1 = np.ones(shape=(n,n)) + 2* np.diag(np.ones(shape = (n)))
+sigma_c0_1 = np.ones(shape=(n,n)) + 2* np.diag(np.ones(shape = (n)))
+
+sigma_c1_1 = np.array([[2,1],
+                       [1,1]])
+sigma_c1_1 = np.ones(shape=(n,n)) + 2* np.diag(np.ones(shape = (n)))
+
+
+
+distributions = [st.multivariate_normal, st.beta]
+
+#set the parameter dictionaries as a list of dictionaries with parameter dictionaries for classes individually.
+dist_parameter_dicts = [{'modes_c0': 2,
+                         'modes_c1': 1,
+                         'mixing_weights_c0': [0.3, 0.7],
+                         'mixing_weights_c1': [0.3, 0.7],
+                         'params_c0': {'mean': [mu_c0_1, mu_c0_2], 'cov': [sigma_c0_1, sigma_c0_2]},
+                         'params_c1': {'mean': [mu_c1_1], 'cov': [sigma_c1_1]}
+                        },
+]
+
+sizes = [19000, 1000]
+
+experiment_dict = {'distributions': distributions,
+                   'params_dict_list': dist_parameter_dicts,
+                   'sizes': sizes,
+                }
+
+
+
+
+"""
 Bimodal Multinormal + Beta
 -------------------------------------------------------------------------------------------------------------------------------------------
 """
@@ -206,6 +253,7 @@ for n in range(1, k):
 
 
 
+
 if __name__=="__main__":
 
     from helper_tools import extract_table_info, extract_dist_substrings, format_dict_as_string, create_simple_normal_dict_list
@@ -253,11 +301,38 @@ if __name__=="__main__":
     """
     Distribution names + parameters
     -------------------------------------------------------------------------------------------------------------------------------------------
-    """
+   
     dist_names = st.distributions.__all__
     #print(dist_names)
     
     for dist_name in dist_names:
         dist = getattr(st, dist_name)
         #print(dist)
-        
+    
+    """
+
+
+    """
+    Bimodal Multinormal Experiment for Report - Parameter Checks
+    -------------------------------------------------------------------------------------------------------------------------------------------
+    """
+    #set the parameter dictionary for the MV normal. sigma is the standard deviation
+    n = 15
+    k = 2
+    mu_c0_1 = np.zeros(shape = (n))
+    mu_c0_2 = np.concatenate([4*np.ones(shape = (k)),np.zeros(shape = (n-k))])
+    mu_c1_1 = 4*np.ones(shape = (n))
+    #mu_c1_2 =  2 * np.ones(shape = (n))
+
+    sigma_c0_1 = np.array([[1,0],
+                        [0,3]])
+    sigma_c0_2 = np.array([[1,0],
+                        [0,1]])
+    sigma_c0_1 = np.ones(shape=(n,n)) + 2* np.diag(np.ones(shape = (n)))
+    sigma_c0_1 = np.ones(shape=(n,n)) + 2* np.diag(np.ones(shape = (n)))
+
+    sigma_c1_1 = np.array([[2,1],
+                        [1,1]])
+    sigma_c1_1 = np.ones(shape=(n,n)) + 2* np.diag(np.ones(shape = (n)))
+    
+    

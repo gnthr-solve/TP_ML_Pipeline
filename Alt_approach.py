@@ -3,6 +3,7 @@ import numpy as np
 import scipy.stats as st
 import plotly.express as px
 from scipy.stats import linregress
+from scipy.interpolate import splrep, BSpline, CubicSpline, interp1d
 #from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
 from helper_tools import extract_table_info, calculate_no_samples
@@ -155,17 +156,17 @@ class Assessor(Data):
         }
 
         metrics_dict = std_metrics_dict or default_metrics
-
+        std_metric_list = [(name, metr_func) for name, metr_func in metrics_dict.items()]
 
         self.data_dict['std_metrics_res'] = np.full(shape = self.exp_dim + (len(metrics_dict),), fill_value = np.nan)
         
-        metrics = Metrics(metrics_dict)
+        metrics = Metrics()
 
-        metrics.confusion_metrics()
+        metrics.confusion_metrics(std_metric_list)
 
         std_metrics_res = self.data_dict['std_metrics_res'].reshape(-1, len(metrics_dict))
 
-        results_df = pd.DataFrame(std_metrics_res, columns= [name for (name, metr_func) in metrics.std_metric_list])
+        results_df = pd.DataFrame(std_metrics_res, columns= [name for (name, metr_func) in std_metric_list])
 
         reference_list = [self.data_dict['assignment_dict'][(i, j, k)] 
                           for i in range(self.exp_dim[0]) 
@@ -194,11 +195,36 @@ class Assessor(Data):
 
 
     @timing_decorator
-    def create_calibration_curves(self, m = 10, save = False, title = f'Calibration Curves'):
+    def create_calibration_curves(self, doc_dict, m = 10, spline = False, save = False, title = f'Calibration Curves'):
 
-        metrics = Metrics({})
+        doc_reference_dict = {
+            "n_features": 0,
+            "n_samples": 1,
+            "class_ratio": 2, 
+            "doc_string": 3,
+            "balancer": 4, 
+            "classifier": 5
+        }
 
-        metrics.calibration_curve_fmlp(m = 10, save = False, title = f'Calibration Curves')
+        doc_reference_dict = {key: index
+                              for key, index in doc_reference_dict.items()
+                              if doc_dict.get(key)
+                            }
+        
+        names_dict = {key: [*list(map(str, extract_table_info(assign_list[0]))), 
+                            assign_list[1][0], 
+                            assign_list[2][0]]
+                      for key, assign_list in self.data_dict['assignment_dict'].items()}
+
+        names_dict = {key: ', '.join([doc_list[i] for i in doc_reference_dict.values()]) 
+                      for key, doc_list in names_dict.items()}
+
+        metrics = Metrics()
+
+        if spline:
+            metrics.calibration_curves_spline(names_dict, m = m, save = save, title = title)
+        else:
+            metrics.calibration_curves(names_dict, m = m, save = save, title = title)
 
 
 
@@ -461,12 +487,10 @@ class DataClassifier(Data):
 
 class Metrics(Data):
 
-    def __init__(self, std_metrics_dict):
+    #def __init__(self):
 
-        self.std_metric_list = [(name, metr_func) for name, metr_func in std_metrics_dict.items()]
 
-        
-    def confusion_metrics(self):
+    def confusion_metrics(self, std_metric_list):
 
         y_test = self.data_dict['org_y_test']
         y_pred = self.data_dict['clsf_predictions_y']
@@ -479,7 +503,7 @@ class Metrics(Data):
             y_clsf_pred = y_pred[i, j, k]
             y_clsf_pred = y_clsf_pred[~np.isnan(y_clsf_pred)]
 
-            evaluation = np.array([metr_func(y_i_test, y_clsf_pred) for (name, metr_func) in self.std_metric_list])
+            evaluation = np.array([metr_func(y_i_test, y_clsf_pred) for (name, metr_func) in std_metric_list])
 
             self.data_dict['std_metrics_res'][i, j, k, :] = evaluation
 
@@ -491,16 +515,10 @@ class Metrics(Data):
 
 
 
-    def calibration_curve_fmlp(self, m = 10, save = False, title = f'Calibration Curves'):
+    def calibration_curves(self, names_dict, m = 10, save = False, title = f'Calibration Curves'):
         predicted_proba_raw = self.data_dict['clsf_predictions_proba']
         class_orders = self.data_dict['classes_order']
-
-        names_dict = {key: [*list(map(str, extract_table_info(assign_list[0]))), 
-                            assign_list[1][0], 
-                            assign_list[2][0]]
-                      for key, assign_list in self.data_dict['assignment_dict'].items()}
-        
-        names_dict = {key: ', '.join(doc_list) for key, doc_list in names_dict.items()}
+        y_test = self.data_dict['org_y_test']
 
         creation_dict ={
         'mean_pred_proba': [np.arange(0,1, 1/m)],
@@ -511,12 +529,13 @@ class Metrics(Data):
 
             pred_probabilities = predicted_proba_raw[i, j, k]
             corr_classes = class_orders[i, j, k]
+            ds_y_test = y_test[i]
 
             pred_proba = pred_probabilities[:, np.where(corr_classes == 1)[0]].flatten()
             
             sorted_indices = np.argsort(pred_proba)
             sorted_probabilities = pred_proba[sorted_indices]
-            sorted_y_test = self.y_test[sorted_indices]
+            sorted_y_test = ds_y_test[sorted_indices]
 
             binned_probabilities = np.array_split(sorted_probabilities, m)
             binned_y_test = np.array_split(sorted_y_test, m)
@@ -555,28 +574,42 @@ class Metrics(Data):
 
     
 
-    def calibration_curve(self, k = 10):
+    def calibration_curves_spline(self, names_dict, m = 10, save = False, title = f'Calibration Curves with Spline Interpolation'):
+        predicted_proba_raw = self.data_dict['clsf_predictions_proba']
+        class_orders = self.data_dict['classes_order']
+        y_test = self.data_dict['org_y_test']
 
-        predicted_probabilities = [pred_dict['predicted_proba'] for pred_dict in self.predictions_dict_list]
-        names = [pred_dict['name'] for pred_dict in self.predictions_dict_list]
-        
         creation_dict ={
-        'mean_pred_proba': [np.arange(0,1, 1/k)],
-        'mean_freq': [np.arange(0,1, 1/k)],
-        'name': [['Optimum' for _ in range(k)]]
+        'mean_pred_proba': [np.arange(0,1, 1/m)],
+        'mean_freq': [np.arange(0,1, 1/m)],
+        'name': [['Optimum' for _ in range(m)]]
         }
-        for i, pred_proba in enumerate(predicted_probabilities):
+        for (i,j,k) in self.data_dict['assignment_dict']:
 
+            pred_probabilities = predicted_proba_raw[i, j, k]
+            corr_classes = class_orders[i, j, k]
+            ds_y_test = y_test[i]
+
+            pred_proba = pred_probabilities[:, np.where(corr_classes == 1)[0]].flatten()
+            
             sorted_indices = np.argsort(pred_proba)
             sorted_probabilities = pred_proba[sorted_indices]
-            sorted_y_test = self.y_test[sorted_indices]
+            sorted_y_test = ds_y_test[sorted_indices]
 
-            binned_probabilities = np.array_split(sorted_probabilities, k)
-            binned_y_test = np.array_split(sorted_y_test, k)
+            binned_probabilities = np.array_split(sorted_probabilities, m)
+            binned_y_test = np.array_split(sorted_y_test, m)
 
-            creation_dict['mean_pred_proba'].append([bin.sum()/len(bin) for bin in binned_probabilities])
-            creation_dict['mean_freq'].append([bin.sum()/len(bin) for bin in binned_y_test])
-            creation_dict['name'].append([names[i] for _ in range(k)])
+            mean_predicted_proba = [bin.sum()/len(bin) for bin in binned_probabilities]
+            print(names_dict[(i,j,k)], mean_predicted_proba)
+            spline = interp1d(
+                x = mean_predicted_proba, 
+                y = [bin.sum()/len(bin) for bin in binned_y_test],
+                fill_value = 'extrapolate'
+                )
+
+            creation_dict['mean_pred_proba'].append(np.arange(0,1, 1/m))
+            creation_dict['mean_freq'].append([spline(x) for x in np.arange(0,1, 1/m)])
+            creation_dict['name'].append([names_dict[(i,j,k)] for _ in range(m)])
 
         
         #print(creation_dict['name'])
@@ -587,61 +620,25 @@ class Metrics(Data):
         }
 
         df = pd.DataFrame(df_creation_dict)
+        print(df)
 
         fig = px.line(df, 
                       x = 'Predicted Prob.', 
                       y = 'Mean Frequency', 
                       color = 'Name', 
-                      title = f'Calibration Curve ({k} bins)', 
+                      title = title +f'({m} bins)', 
                       markers = True
                       )
-        fig.show()
-    
-
-
-    def calibration_curve_reg(self, k = 10):
-
-        predicted_probabilities = [pred_dict['predicted_proba'] for pred_dict in self.predictions_dict_list]
-        names = [pred_dict['name'] for pred_dict in self.predictions_dict_list]
         
-        creation_dict ={
-        'mean_pred_proba': [np.arange(0,1, 1/k)],
-        'mean_freq': [np.arange(0,1, 1/k)],
-        'name': [['Optimum' for _ in range(k)]]
-        }
-        for i, pred_proba in enumerate(predicted_probabilities):
-
-            sorted_indices = np.argsort(pred_proba)
-            sorted_probabilities = pred_proba[sorted_indices]
-            sorted_y_test = self.y_test[sorted_indices]
-
-            binned_probabilities = np.array_split(sorted_probabilities, k)
-            binned_y_test = np.array_split(sorted_y_test, k)
-
-            mean_predicted_proba = [bin.sum()/len(bin) for bin in binned_probabilities]
-            res = linregress(
-                x = mean_predicted_proba,
-                y = [bin.sum()/len(bin) for bin in binned_y_test]
-            )
-
-            #creation_dict['mean_pred_proba'].append(mean_predicted_proba)
-            creation_dict['mean_pred_proba'].append(np.arange(0,1, 1/k))
-            #creation_dict['mean_freq'].append([res.intercept + res.slope * x for x in mean_predicted_proba])
-            creation_dict['mean_freq'].append([res.intercept + res.slope * x for x in np.arange(0,1, 1/k)])
-            creation_dict['name'].append([names[i] for _ in range(k)])
-
-        
-        #print(creation_dict['name'])
-        df_creation_dict = {
-            'Predicted Prob.': np.concatenate(creation_dict['mean_pred_proba']),
-            'Mean Frequency': np.concatenate(creation_dict['mean_freq']),
-            'Name': sum(creation_dict['name'], [])
-        }
-
-        df = pd.DataFrame(df_creation_dict)
-
-        fig = px.line(df, x = 'Predicted Prob.', y = 'Mean Frequency', color = 'Name', title = f'Calibration Curve with Regression ({k} bins)')
+        if save:
+            fig.write_image(f"Figures/'{title}'.png", 
+                            width=1920, 
+                            height=1080, 
+                            scale=3
+                            )
+            
         fig.show()
+
 
 
 
@@ -705,7 +702,7 @@ if __name__=="__main__":
     -------------------------------------------------------------------------------------------------------------------------------------------
     """
     
-    assessor = Assessor(0.2, [mixed_3d_test_dict, mixed_test_dict], balancing_methods, classifiers_dict)
+    assessor = Assessor(0.2, [mixed_3d_test_dict], balancing_methods, classifiers_dict)
 
     assessor.generate()
     assessor.balance()
@@ -721,10 +718,18 @@ if __name__=="__main__":
                            ignore_index=True,
                            axis = 0).reset_index(drop=True)
     
-    print(results_df)
-   
+    #print(results_df)
+    #print(results_df[results_df['classifier'] == 'Lightgbm'])
+
     #calibration curves test
     #-------------------------------------------------------------------------------------------------------------------------------------------
-    
-    assessor.create_calibration_curves()
+    doc_dict = {
+            "n_features": False,
+            "n_samples": False,
+            "class_ratio": False, 
+            "doc_string": False,
+            "balancer": True, 
+            "classifier": True
+        }
+    assessor.create_calibration_curves(doc_dict, m=20, spline = True)
     

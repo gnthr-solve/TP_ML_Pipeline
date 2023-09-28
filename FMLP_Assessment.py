@@ -85,12 +85,12 @@ First Run class distance
 -------------------------------------------------------------------------------------------------------------------------------------------
 """
 
-for distance in class_distance_list[:]:
+for distance in class_distance_list[6:]:
 
     results_df = pd.read_csv('Experiments/cls_dist_std_mv_normal.csv', index_col=0)
     #print(results_df)
 
-    gen_dict_list = create_simple_normal_dict_list(n_samples_list[1:2], n_features_list[2:], class_ratio_list[:], [distance])
+    gen_dict_list = create_simple_normal_dict_list(n_samples_list[1:2], n_features_list[:2], class_ratio_list[:2], [distance])
     print([extract_table_info(gen_dict) for gen_dict in gen_dict_list])
 
     assessor = Assessor(0.2, gen_dict_list, balancing_methods, classifiers_dict)
