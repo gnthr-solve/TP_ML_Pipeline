@@ -98,10 +98,12 @@ class Assessor(Data):
                 for bal_dict in bal_params_dicts.values():
 
                     max_total_samples = max(max_total_samples, sum(calculate_no_samples(y_train[data_ind], bal_dict['sampling_strategy']).values()))
+                    #print('Maximal assumed balanced samples: ', max_total_samples)
 
             #compare to default strategy if not every balancer has a dict
             if len(bal_params_dicts) < b:
                 max_total_samples = max(max_total_samples, sum(calculate_no_samples(y_train[data_ind], default_strategy).values()))
+                #print('Maximal assumed balanced samples: ', max_total_samples)
         
         k = max_c1 + max_total_samples
 
@@ -136,8 +138,10 @@ class Assessor(Data):
               'Size classifier array: \n', self.exp_dim[0]*self.exp_dim[1]*self.exp_dim[2]*n*2)
         data_classifier = DataClassifier()
 
+        print('Fitting started.')
         data_classifier.fit()
 
+        print('Fitting complete. Prediction started')
         data_classifier.predict()
 
         #print({key: np.shape(value) for key, value in self.data_dict.items()})
@@ -222,9 +226,41 @@ class Assessor(Data):
         metrics = Metrics()
 
         if spline:
-            metrics.calibration_curves_spline(names_dict, m = m, save = save, title = title)
+            #metrics.calibration_curves_spline(names_dict, m = m, save = save, title = title)
+            metrics.calibration_curves_spline_alt(names_dict, save = save, title = title)
         else:
             metrics.calibration_curves(names_dict, m = m, save = save, title = title)
+
+    
+    @timing_decorator
+    def create_decision_curves(self, doc_dict, m = 10, save = False, title = f'Decision Curves'):
+
+        doc_reference_dict = {
+            "n_features": 0,
+            "n_samples": 1,
+            "class_ratio": 2, 
+            "doc_string": 3,
+            "balancer": 4, 
+            "classifier": 5
+        }
+
+        doc_reference_dict = {key: index
+                              for key, index in doc_reference_dict.items()
+                              if doc_dict.get(key)
+                            }
+        
+        names_dict = {key: [*list(map(str, extract_table_info(assign_list[0]))), 
+                            assign_list[1][0], 
+                            assign_list[2][0]]
+                      for key, assign_list in self.data_dict['assignment_dict'].items()}
+
+        names_dict = {key: ', '.join([doc_list[i] for i in doc_reference_dict.values()]) 
+                      for key, doc_list in names_dict.items()}
+
+        metrics = Metrics()
+
+        metrics.decision_curves(names_dict, m = m, save = save, title = title)
+
 
 
 
@@ -339,7 +375,8 @@ class Generator(Data):
         X_train, X_test, y_train, y_test= train_test_split(
                                                             self.X, 
                                                             self.y, 
-                                                            test_size = test_size, 
+                                                            test_size = test_size,
+                                                            stratify = self.y,
                                                             random_state=self.random_state
                                                             )
         
@@ -453,6 +490,7 @@ class DataClassifier(Data):
             y_fit = y_fit[~np.isnan(y_fit)]
             
             self.classifier_dict[(i,j,k)] = (name, clsf.fit(X_fit, y_fit))
+            print(f'Fit completed for {name} on data index {i} and balancer index {j}')
 
 
         return self
@@ -476,6 +514,8 @@ class DataClassifier(Data):
             self.data_dict['clsf_predictions_y'][i, j, k, : n_i] = clsf.predict(X_test)
             self.data_dict['clsf_predictions_proba'][i, j, k, : n_i, :] = clsf.predict_proba(X_test) 
             self.data_dict['classes_order'][i, j, k, :] = clsf.classes_
+
+            print(f'Prediction completed for {name} on data index {i} and balancer index {j}')
 
     
 
@@ -520,22 +560,35 @@ class Metrics(Data):
         class_orders = self.data_dict['classes_order']
         y_test = self.data_dict['org_y_test']
 
+        class_ratios = np.nansum(y_test, axis=1) / np.sum(~np.isnan(y_test), axis=1)
+        m = 1 / min(class_ratios)
+        print(m)
+        m = int(m)
+
         creation_dict ={
-        'mean_pred_proba': [np.arange(0,1, 1/m)],
-        'mean_freq': [np.arange(0,1, 1/m)],
+        'mean_pred_proba': [np.arange(0, 1, 1/m)],
+        'mean_freq': [np.arange(0, 1, 1/m)],
         'name': [['Optimum' for _ in range(m)]]
         }
         for (i,j,k) in self.data_dict['assignment_dict']:
 
-            pred_probabilities = predicted_proba_raw[i, j, k]
             corr_classes = class_orders[i, j, k]
-            ds_y_test = y_test[i]
+            
+            y_i_test = y_test[i]
+            y_i_test = y_i_test[~np.isnan(y_i_test)]
+
+            pred_probabilities = predicted_proba_raw[i, j, k]
+
+            # Drop rows with NaN values
+            pred_probabilities = pred_probabilities[~np.isnan(pred_probabilities).all(axis = 1)]
+            # Drop columns with NaN values
+            pred_probabilities = pred_probabilities[: , ~np.isnan(pred_probabilities).all(axis = 0)]
 
             pred_proba = pred_probabilities[:, np.where(corr_classes == 1)[0]].flatten()
             
             sorted_indices = np.argsort(pred_proba)
             sorted_probabilities = pred_proba[sorted_indices]
-            sorted_y_test = ds_y_test[sorted_indices]
+            sorted_y_test = y_i_test[sorted_indices]
 
             binned_probabilities = np.array_split(sorted_probabilities, m)
             binned_y_test = np.array_split(sorted_y_test, m)
@@ -553,7 +606,7 @@ class Metrics(Data):
         }
 
         df = pd.DataFrame(df_creation_dict)
-        print(df)
+        #print(df)
 
         fig = px.line(df, 
                       x = 'Predicted Prob.', 
@@ -579,36 +632,54 @@ class Metrics(Data):
         class_orders = self.data_dict['classes_order']
         y_test = self.data_dict['org_y_test']
 
+        class_ratios = np.nansum(y_test, axis=1) / np.sum(~np.isnan(y_test), axis=1)
+        max_mean_freq = max(class_ratios) * m
+
         creation_dict ={
-        'mean_pred_proba': [np.arange(0,1, 1/m)],
-        'mean_freq': [np.arange(0,1, 1/m)],
+        'mean_pred_proba': [np.linspace(0, max_mean_freq, m)],
+        'mean_freq': [np.linspace(0, max_mean_freq, m)],
         'name': [['Optimum' for _ in range(m)]]
         }
         for (i,j,k) in self.data_dict['assignment_dict']:
 
-            pred_probabilities = predicted_proba_raw[i, j, k]
             corr_classes = class_orders[i, j, k]
-            ds_y_test = y_test[i]
+            
+            y_i_test = y_test[i].copy()
+            y_i_test = y_i_test[~np.isnan(y_i_test)]
+            print(f'Length of y_{i}_test: ', len(y_i_test))
+            print(f'Number of positive in y_{i}_test: ', np.sum(y_i_test))
 
+            pred_probabilities = predicted_proba_raw[i, j, k]
+            
+            # Drop rows with NaN values
+            pred_probabilities = pred_probabilities[~np.isnan(pred_probabilities).all(axis = 1)]
+            # Drop columns with NaN values
+            pred_probabilities = pred_probabilities[: , ~np.isnan(pred_probabilities).all(axis = 0)]
+            
             pred_proba = pred_probabilities[:, np.where(corr_classes == 1)[0]].flatten()
+            print(len(y_i_test) == len(pred_proba))
             
             sorted_indices = np.argsort(pred_proba)
             sorted_probabilities = pred_proba[sorted_indices]
-            sorted_y_test = ds_y_test[sorted_indices]
+            sorted_y_test = y_i_test[sorted_indices]
 
             binned_probabilities = np.array_split(sorted_probabilities, m)
             binned_y_test = np.array_split(sorted_y_test, m)
 
             mean_predicted_proba = [bin.sum()/len(bin) for bin in binned_probabilities]
             print(names_dict[(i,j,k)], mean_predicted_proba)
+            print(f'Binned y_{i}_test: ', [bin.sum()/len(bin) for bin in binned_y_test])
+            print(f'The binned y_{i}_test means: ', sum([bin.sum()/len(bin) for bin in binned_y_test]))
+            print(f'The binned y_{i}_test sums ', [bin.sum() for bin in binned_y_test])
+            print(f'The bin lengths: ', [len(bin) for bin in binned_y_test])
             spline = interp1d(
                 x = mean_predicted_proba, 
                 y = [bin.sum()/len(bin) for bin in binned_y_test],
                 fill_value = 'extrapolate'
                 )
 
-            creation_dict['mean_pred_proba'].append(np.arange(0,1, 1/m))
-            creation_dict['mean_freq'].append([spline(x) for x in np.arange(0,1, 1/m)])
+            creation_dict['mean_pred_proba'].append(np.linspace(0, max(mean_predicted_proba), m))
+            creation_dict['mean_freq'].append([spline(x) for x in np.linspace(0, max_mean_freq, m)])
             creation_dict['name'].append([names_dict[(i,j,k)] for _ in range(m)])
 
         
@@ -620,7 +691,95 @@ class Metrics(Data):
         }
 
         df = pd.DataFrame(df_creation_dict)
-        print(df)
+        #print(df)
+
+        fig = px.line(df, 
+                      x = 'Predicted Prob.', 
+                      y = 'Mean Frequency', 
+                      color = 'Name', 
+                      title = title +f'({m} bins)', 
+                      markers = True
+                      )
+        
+        if save:
+            fig.write_image(f"Figures/'{title}'.png", 
+                            width=1920, 
+                            height=1080, 
+                            scale=3
+                            )
+            
+        fig.show()
+
+    
+
+
+    def calibration_curves_spline_alt(self, names_dict, save = False, title = f'Calibration Curves with Spline Interpolation'):
+        predicted_proba_raw = self.data_dict['clsf_predictions_proba']
+        class_orders = self.data_dict['classes_order']
+        y_test = self.data_dict['org_y_test']
+
+        class_ratios = np.nansum(y_test, axis=1) / np.sum(~np.isnan(y_test), axis=1)
+        m = 1 / min(class_ratios)
+        print(m)
+        m = int(m)
+
+        creation_dict ={
+        'mean_pred_proba': [np.arange(0, 1, 1/m)],
+        'mean_freq': [np.arange(0, 1, 1/m)],
+        'name': [['Optimum' for _ in range(m)]]
+        }
+        for (i,j,k) in self.data_dict['assignment_dict']:
+
+            corr_classes = class_orders[i, j, k]
+            
+            y_i_test = y_test[i].copy()
+            y_i_test = y_i_test[~np.isnan(y_i_test)]
+            print(f'Length of y_{i}_test: ', len(y_i_test))
+            print(f'Number of positive in y_{i}_test: ', np.sum(y_i_test))
+
+            pred_probabilities = predicted_proba_raw[i, j, k]
+            
+            # Drop rows with NaN values
+            pred_probabilities = pred_probabilities[~np.isnan(pred_probabilities).all(axis = 1)]
+            # Drop columns with NaN values
+            pred_probabilities = pred_probabilities[: , ~np.isnan(pred_probabilities).all(axis = 0)]
+            
+            pred_proba = pred_probabilities[:, np.where(corr_classes == 1)[0]].flatten()
+            print(len(y_i_test) == len(pred_proba))
+            
+            sorted_indices = np.argsort(pred_proba)
+            sorted_probabilities = pred_proba[sorted_indices]
+            sorted_y_test = y_i_test[sorted_indices]
+
+            binned_probabilities = np.array_split(sorted_probabilities, m)
+            binned_y_test = np.array_split(sorted_y_test, m)
+
+            mean_predicted_proba = [bin.sum()/len(bin) for bin in binned_probabilities]
+            print(names_dict[(i,j,k)], mean_predicted_proba)
+            print(f'Binned y_{i}_test: ', [bin.sum()/len(bin) for bin in binned_y_test])
+            print(f'The binned y_{i}_test means: ', sum([bin.sum()/len(bin) for bin in binned_y_test]))
+            print(f'The binned y_{i}_test sums ', [bin.sum() for bin in binned_y_test])
+            print(f'The bin lengths: ', [len(bin) for bin in binned_y_test])
+            spline = interp1d(
+                x = mean_predicted_proba, 
+                y = [bin.sum()/len(bin) for bin in binned_y_test],
+                fill_value = 'extrapolate'
+                )
+
+            creation_dict['mean_pred_proba'].append(np.arange(0, 1, 1/m))
+            creation_dict['mean_freq'].append([spline(x) for x in np.arange(0, 1, 1/m)])
+            creation_dict['name'].append([names_dict[(i,j,k)] for _ in range(m)])
+
+        
+        #print(creation_dict['name'])
+        df_creation_dict = {
+            'Predicted Prob.': np.concatenate(creation_dict['mean_pred_proba']),
+            'Mean Frequency': np.concatenate(creation_dict['mean_freq']),
+            'Name': sum(creation_dict['name'], [])
+        }
+
+        df = pd.DataFrame(df_creation_dict)
+        #print(df)
 
         fig = px.line(df, 
                       x = 'Predicted Prob.', 
@@ -641,6 +800,87 @@ class Metrics(Data):
 
 
 
+    def decision_curves(self, names_dict, m = 10, save = False, title = f'Decision Curves'):
+        predicted_proba_raw = self.data_dict['clsf_predictions_proba']
+        class_orders = self.data_dict['classes_order']
+        y_test = self.data_dict['org_y_test']
+
+        creation_dict ={
+        #'pred_threshold': [np.arange(0,1, 1/m)],
+        'pred_threshold': [],
+        #'net_benefit': [np.arange(0,1, 1/m)],
+        'net_benefit': [],
+        #'name': [['Treat All' for _ in range(m)]]
+        'name': []
+        }
+        for (i,j,k) in self.data_dict['assignment_dict']:
+
+            corr_classes = class_orders[i, j, k]
+            
+            y_i_test = y_test[i]
+            y_i_test = y_i_test[~np.isnan(y_i_test)].astype(int)
+
+            pred_probabilities = predicted_proba_raw[i, j, k]
+
+            # Drop rows with NaN values
+            pred_probabilities = pred_probabilities[~np.isnan(pred_probabilities).all(axis = 1)]
+            # Drop columns with NaN values
+            pred_probabilities = pred_probabilities[: , ~np.isnan(pred_probabilities).all(axis = 0)]
+
+            pred_proba = pred_probabilities[:, np.where(corr_classes == 1)[0]].flatten()
+
+            net_benefit_list = []
+            for threshold in np.arange(1/m, 1, 1/m):
+                
+                y_pred = (pred_proba > threshold).astype(int)
+
+                y_test_1_mask = y_i_test == 1
+                y_pred_1_mask = y_pred == 1
+                #print('Number predicted positive:', np.sum(y_pred_1_mask))
+                true_pos = np.sum((y_test_1_mask) & (y_pred_1_mask))
+                false_pos = np.sum((~y_test_1_mask) & (y_pred_1_mask))
+                #print('True Positives:', true_pos, 'False Positives:', false_pos)
+                #print('Threshold:', threshold, 'Net Benefit:',true_pos - harm_to_benefit*false_pos)
+                
+                net_benefit = (true_pos - (threshold/1-threshold)*false_pos)/len(y_i_test)
+                #net_benefit = (true_pos - harm_to_benefit*false_pos)/len(y_i_test)
+                net_benefit_list.append(net_benefit)
+
+            creation_dict['pred_threshold'].append(np.arange(1/m, 1, 1/m))
+            creation_dict['net_benefit'].append(net_benefit_list)
+            creation_dict['name'].append([names_dict[(i,j,k)] for _ in range(m-1)])
+
+        
+        #print(creation_dict['name'])
+        df_creation_dict = {
+            'Prediction Threshold': np.concatenate(creation_dict['pred_threshold']),
+            'Net Benefit': np.concatenate(creation_dict['net_benefit']),
+            'Name': sum(creation_dict['name'], [])
+        }
+        #print(df_creation_dict)
+        df = pd.DataFrame(df_creation_dict)
+        #print(df)
+
+        fig = px.line(df, 
+                      x = 'Prediction Threshold', 
+                      y = 'Net Benefit', 
+                      color = 'Name', 
+                      title = title, 
+                      markers = True
+                      )
+        
+        if save:
+            fig.write_image(f"Figures/'{title}'.png", 
+                            width=1920, 
+                            height=1080, 
+                            scale=3
+                            )
+            
+        fig.show()
+
+
+
+
 
 
 
@@ -650,7 +890,7 @@ if __name__=="__main__":
     from loguru import logger
     from imblearn.over_sampling import ADASYN,RandomOverSampler,KMeansSMOTE,SMOTE,BorderlineSMOTE,SVMSMOTE,SMOTENC, RandomOverSampler
     from Visualiser import RawVisualiser
-    from gen_parameters import mixed_3d_test_dict, mixed_test_dict
+    from gen_parameters import mixed_3d_test_dict, mixed_test_dict, alt_experiment_dict
     from sklearn.linear_model import LogisticRegression
     from sklearn.tree import DecisionTreeClassifier
     from sklearn.ensemble import RandomForestClassifier
@@ -663,7 +903,7 @@ if __name__=="__main__":
     "Unbalanced": None,
     "ADASYN": ADASYN,
     "RandomOverSampler": RandomOverSampler,
-    "KMeansSMOTE": KMeansSMOTE,
+    #"KMeansSMOTE": KMeansSMOTE,
     "SMOTE": SMOTE,
     "BorderlineSMOTE": BorderlineSMOTE,
     "SVMSMOTE": SVMSMOTE,
@@ -682,26 +922,14 @@ if __name__=="__main__":
 
     visualiser = RawVisualiser()
 
-    """
-    Generator Test Case
-    -------------------------------------------------------------------------------------------------------------------------------------------
-    
-    data_generator = Generator(**mixed_test_dict)
-    X_train, X_test, y_train, y_test = data_generator.prepare_data(0.2)
-
-    print('X original shape:', np.shape(X_train))
-    #print('X:', X_train)
-    print('y original shape:', np.shape(y_train))
-    """
-
-
     
 
     """
     Assessor test
     -------------------------------------------------------------------------------------------------------------------------------------------
-    """
     
+    
+    #assessor = Assessor(0.2, [alt_experiment_dict], balancing_methods, classifiers_dict)
     assessor = Assessor(0.2, [mixed_3d_test_dict], balancing_methods, classifiers_dict)
 
     assessor.generate()
@@ -720,7 +948,7 @@ if __name__=="__main__":
     
     #print(results_df)
     #print(results_df[results_df['classifier'] == 'Lightgbm'])
-
+    #results_df.to_csv('Experiments/bimodal_maj_experiment.csv')
     #calibration curves test
     #-------------------------------------------------------------------------------------------------------------------------------------------
     doc_dict = {
@@ -732,4 +960,126 @@ if __name__=="__main__":
             "classifier": True
         }
     assessor.create_calibration_curves(doc_dict, m=20, spline = True)
+    #assessor.create_decision_curves( doc_dict = doc_dict, m=20)
+    """
     
+
+
+    """
+    Alternative Bimodal Multinormal Experiment for Report
+    -------------------------------------------------------------------------------------------------------------------------------------------
+    """
+    balancing_methods = {
+    "Unbalanced": None,
+    "ADASYN": ADASYN,
+    "RandomOverSampler": RandomOverSampler,
+    #"KMeansSMOTE": KMeansSMOTE,
+    "SMOTE": SMOTE,
+    "BorderlineSMOTE": BorderlineSMOTE,
+    "SVMSMOTE": SVMSMOTE,
+    #"SMOTENC": SMOTENC,
+    }
+
+    classifiers_dict = {
+    #"Logistic Regression": LogisticRegression,
+    "Decision Tree": DecisionTreeClassifier,
+    "Random Forest": RandomForestClassifier,
+    #"SVC": SVC,
+    #"Naive Bayes": GaussianNB,
+    "XGboost": XGBClassifier,
+    "Lightgbm": LGBMClassifier
+    }
+
+    assessor = Assessor(0.2, [alt_experiment_dict], balancing_methods, classifiers_dict)
+    
+
+    assessor.generate()
+    assessor.balance()
+    assessor.clsf_pred()
+
+    #calc_std_metrics() test
+    #-------------------------------------------------------------------------------------------------------------------------------------------
+    results_df = pd.DataFrame()
+    new_results_df = assessor.calc_std_metrics()
+
+    #print(new_results_df)
+    results_df = pd.concat([results_df, new_results_df],
+                           ignore_index=True,
+                           axis = 0).reset_index(drop=True)
+    
+    print(results_df)
+    #print(results_df[results_df['classifier'] == 'Lightgbm'])
+    results_df.to_csv('Experiments/bimodal_maj_lower_dist.csv')
+
+
+    #calibration curves test
+    #-------------------------------------------------------------------------------------------------------------------------------------------
+    doc_dict = {
+            "n_features": False,
+            "n_samples": False,
+            "class_ratio": False, 
+            "doc_string": False,
+            "balancer": True, 
+            "classifier": True
+        }
+    
+    assessor.create_calibration_curves(doc_dict, spline = True, save = True, title = f'All Calibration Curves for 100k samples')
+    #assessor.create_decision_curves(harm_to_benefit = 0.2, doc_dict = doc_dict, m=20)
+    
+
+    """
+    Alternative Bimodal Multinormal Experiment Calibration Curves
+    -------------------------------------------------------------------------------------------------------------------------------------------
+    
+    
+    balancing_methods = {
+    "Unbalanced": None,
+    "ADASYN": ADASYN,
+    "RandomOverSampler": RandomOverSampler,
+    "KMeansSMOTE": KMeansSMOTE,
+    "SMOTE": SMOTE,
+    "BorderlineSMOTE": BorderlineSMOTE,
+    "SVMSMOTE": SVMSMOTE,
+    #"SMOTENC": SMOTENC,
+    }
+
+    classifiers_dict = {
+    "Decision Tree": DecisionTreeClassifier,
+    #"Random Forest": RandomForestClassifier,
+    "Logistic Regression": LogisticRegression,
+    #"SVC": SVC,
+    #"Naive Bayes": GaussianNB,
+    "XGboost": XGBClassifier,
+    "Lightgbm": LGBMClassifier
+    }
+
+    m = 20
+    for name, bal in balancing_methods.items():
+
+        balancer_dict = {name: bal}
+        #print(balancer_dict)
+        assessor = Assessor(0.2, [alt_experiment_dict], balancer_dict, classifiers_dict)
+        
+
+        assessor.generate()
+        assessor.balance()
+        assessor.clsf_pred()
+
+        #calibration curves test
+        #-------------------------------------------------------------------------------------------------------------------------------------------
+        doc_dict = {
+                "n_features": False,
+                "n_samples": False,
+                "class_ratio": False, 
+                "doc_string": False,
+                "balancer": False, 
+                "classifier": True
+            }
+        
+        assessor.create_calibration_curves(doc_dict, m, spline = True, save = False, title = f'Calibration Curves for {name}')
+        assessor.create_calibration_curves(doc_dict, m, spline = False, save = False, title = f'Calibration Curves for {name}')
+
+        
+        
+        #assessor.create_decision_curves(doc_dict = doc_dict, m = m, save = True, title = f'Decision Curves for {name}')
+    """

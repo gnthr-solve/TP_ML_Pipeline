@@ -120,11 +120,11 @@ if __name__=="__main__":
     from imblearn.over_sampling import ADASYN,RandomOverSampler,KMeansSMOTE,SMOTE,BorderlineSMOTE,SVMSMOTE,SMOTENC, RandomOverSampler
     from Data_Generator import Multi_Modal_Dist_Generator
     from Visualiser import RawVisualiser
-    from gen_parameters import mixed_3d_test_dict
+    from gen_parameters import mixed_3d_test_dict, alt_experiment_dict
 
 
     balancing_methods = {
-    "Unbalanced": None,
+    #"Unbalanced": None,
     "ADASYN": ADASYN,
     "RandomOverSampler": RandomOverSampler,
     "KMeansSMOTE": KMeansSMOTE,
@@ -136,7 +136,7 @@ if __name__=="__main__":
 
     visualiser = RawVisualiser()
 
-    data_generator = Multi_Modal_Dist_Generator(**mixed_3d_test_dict)
+    data_generator = Multi_Modal_Dist_Generator(**alt_experiment_dict)
     X_train, X_test, y_train, y_test = data_generator.prepare_data(0.2)
 
 
@@ -203,21 +203,22 @@ if __name__=="__main__":
 
         datasets = [
             (X_train, y_train, 'Train'),
-            (only_balance_X, only_balance_y, 'Balanced Train')
+            (only_balance_X, only_balance_y, 'Data Added by Balancer')
         ]
 
-        continue
 
         #visualiser.plot_2d_scatter((data[0], data[1]),0, 1)
         visualiser.plot_2d_scatter_multiple_datasets_px(datasets, 
                                                         feature1 = 0, 
                                                         feature2 = 1, 
-                                                        title = f'Scatter of {name}-balanced Data')
+                                                        title = f'Scatter of {name} with data from bimodal experiment',
+                                                        save = True)
         
+        """
         visualiser.plot_3d_scatter_multiple_datasets_px(datasets,
                                                         feature1 = 0, 
                                                         feature2 = 1,
                                                         feature3 = 2,
                                                         title = f'3d Scatter of {name}-balanced Data')
-
+        """
     

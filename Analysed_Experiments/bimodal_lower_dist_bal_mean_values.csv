@@ -1,0 +1,7 @@
+balancer,accuracy,precision,recall,F1 score,ROC AUC Score
+ADASYN,0.997,0.818,0.899,0.855,0.948
+BorderlineSMOTE,0.998,0.908,0.889,0.898,0.944
+RandomOverSampler,0.998,0.954,0.866,0.907,0.933
+SMOTE,0.997,0.86,0.906,0.878,0.952
+SVMSMOTE,0.998,0.896,0.911,0.903,0.955
+Unbalanced,0.998,0.941,0.822,0.877,0.911

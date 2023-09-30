@@ -9,22 +9,16 @@ Bimodal Multinormal Experiment for Report
 """
 #set the parameter dictionary for the MV normal. sigma is the standard deviation
 n = 15
-k = 2
-mu_c0_1 = np.zeros(shape = (n))
-mu_c0_2 = np.concatenate([4*np.ones(shape = (k)),np.zeros(shape = (n-k))])
-mu_c1_1 = 4*np.ones(shape = (n))
-#mu_c1_2 =  2 * np.ones(shape = (n))
+k = 1
+mu_c0_1 = np.concatenate([np.zeros(shape = (n-k)),6*np.ones(shape = (k))])
+mu_c0_2 = np.concatenate([6*np.ones(shape = (k)),np.zeros(shape = (n-k))])
+mu_c1 = 4*np.ones(shape = (n))
 
-sigma_c0_1 = np.array([[1,0],
-                       [0,3]])
-sigma_c0_2 = np.array([[1,0],
-                       [0,1]])
-sigma_c0_1 = np.ones(shape=(n,n)) + 2* np.diag(np.ones(shape = (n)))
-sigma_c0_1 = np.ones(shape=(n,n)) + 2* np.diag(np.ones(shape = (n)))
+sigma_c0_1 =  2* np.diag(np.ones(shape = (n)))
+sigma_c0_2 =  0.7* np.diag(np.ones(shape = (n)))
 
-sigma_c1_1 = np.array([[2,1],
-                       [1,1]])
-sigma_c1_1 = np.ones(shape=(n,n)) + 2* np.diag(np.ones(shape = (n)))
+sigma_c1 = np.ones(shape=(n,n)) + np.diag(np.ones(shape = (n)))
+#sigma_c1 = -1* np.ones(shape=(n,n)) + 3* np.diag(np.ones(shape = (n)))
 
 
 
@@ -33,10 +27,9 @@ distributions = [st.multivariate_normal, st.beta]
 #set the parameter dictionaries as a list of dictionaries with parameter dictionaries for classes individually.
 dist_parameter_dicts = [{'modes_c0': 2,
                          'modes_c1': 1,
-                         'mixing_weights_c0': [0.3, 0.7],
-                         'mixing_weights_c1': [0.3, 0.7],
+                         'mixing_weights_c0': [0.4, 0.6],
                          'params_c0': {'mean': [mu_c0_1, mu_c0_2], 'cov': [sigma_c0_1, sigma_c0_2]},
-                         'params_c1': {'mean': [mu_c1_1], 'cov': [sigma_c1_1]}
+                         'params_c1': {'mean': [mu_c1], 'cov': [sigma_c1]}
                         },
 ]
 
@@ -46,6 +39,44 @@ experiment_dict = {'distributions': distributions,
                    'params_dict_list': dist_parameter_dicts,
                    'sizes': sizes,
                 }
+
+
+
+
+"""
+Alternative Bimodal Multinormal Experiment for Report
+-------------------------------------------------------------------------------------------------------------------------------------------
+"""
+#set the parameter dictionary for the MV normal. sigma is the standard deviation
+n = 15
+k = 1
+mu_c0_1 = 3*np.ones(shape = (n))
+mu_c0_2 = -3*np.ones(shape = (n))
+mu_c1 = np.zeros(shape = (n))
+
+sigma_c0_1 =  2* np.diag(np.ones(shape = (n)))
+sigma_c0_2 =  0.7* np.diag(np.ones(shape = (n)))
+
+sigma_c1 = np.ones(shape=(n,n)) + np.diag(np.ones(shape = (n)))
+#sigma_c1 = -1* np.ones(shape=(n,n)) + 3* np.diag(np.ones(shape = (n)))
+
+distributions = [st.multivariate_normal, st.beta]
+
+#set the parameter dictionaries as a list of dictionaries with parameter dictionaries for classes individually.
+dist_parameter_dicts = [{'modes_c0': 2,
+                         'modes_c1': 1,
+                         'mixing_weights_c0': [0.4, 0.6],
+                         'params_c0': {'mean': [mu_c0_1, mu_c0_2], 'cov': [sigma_c0_1, sigma_c0_2]},
+                         'params_c1': {'mean': [mu_c1], 'cov': [sigma_c1]}
+                        },
+]
+
+sizes = [99000, 1000]
+
+alt_experiment_dict = {'distributions': distributions,
+                       'params_dict_list': dist_parameter_dicts,
+                       'sizes': sizes,
+                    }
 
 
 
@@ -87,7 +118,7 @@ dist_parameter_dicts = [{'modes_c0': 2,
                         }
 ]
 
-sizes = [19000, 1000]
+sizes = [99000, 1000]
 
 mixed_3d_test_dict = {'distributions': distributions,
                       'params_dict_list': dist_parameter_dicts,
@@ -256,12 +287,12 @@ for n in range(1, k):
 
 if __name__=="__main__":
 
-    from helper_tools import extract_table_info, extract_dist_substrings, format_dict_as_string, create_simple_normal_dict_list
+    from helper_tools import extract_table_info, extract_dist_substrings, format_dict_as_string, create_simple_normal_dict_list, is_cov_matrix
     table_info = extract_table_info(mixed_3d_test_dict)
 
     #print(table_info)
     #print(extract_table_info(large_normal_test_dict))
-    print(extract_table_info(default_test_dict))
+    #print(extract_table_info(default_test_dict))
     #print(mixed_3d_test_dict['distributions'])
     #print(format_dict_as_string(mixed_3d_test_dict))
 
@@ -318,21 +349,19 @@ if __name__=="__main__":
     """
     #set the parameter dictionary for the MV normal. sigma is the standard deviation
     n = 15
-    k = 2
+    k = 1
     mu_c0_1 = np.zeros(shape = (n))
     mu_c0_2 = np.concatenate([4*np.ones(shape = (k)),np.zeros(shape = (n-k))])
-    mu_c1_1 = 4*np.ones(shape = (n))
-    #mu_c1_2 =  2 * np.ones(shape = (n))
+    mu_c1 = 4*np.ones(shape = (n))
 
-    sigma_c0_1 = np.array([[1,0],
-                        [0,3]])
-    sigma_c0_2 = np.array([[1,0],
-                        [0,1]])
-    sigma_c0_1 = np.ones(shape=(n,n)) + 2* np.diag(np.ones(shape = (n)))
-    sigma_c0_1 = np.ones(shape=(n,n)) + 2* np.diag(np.ones(shape = (n)))
+    sigma_c0_1 =  2* np.diag(np.ones(shape = (n)))
+    sigma_c0_2 =  0.7* np.diag(np.ones(shape = (n)))
 
-    sigma_c1_1 = np.array([[2,1],
-                        [1,1]])
-    sigma_c1_1 = np.ones(shape=(n,n)) + 2* np.diag(np.ones(shape = (n)))
+    sigma_c1 = np.ones(shape=(n,n)) + np.diag(np.ones(shape = (n)))
+    #sigma_c1 = -1* np.ones(shape=(n,n)) + 3* np.diag(np.ones(shape = (n)))
+    
+    print(is_cov_matrix(sigma_c0_1))
+    print(is_cov_matrix(sigma_c0_2))
+    print(is_cov_matrix(sigma_c1))
     
     

@@ -491,7 +491,7 @@ if __name__ == "__main__":
     """
     Multi_Modal_Dist_Generator - Data illustration
     -------------------------------------------------------------------------------------------------------------------------------------------
-    """
+    
     from Visualiser import RawVisualiser
 
     visualiser = RawVisualiser()
@@ -519,6 +519,50 @@ if __name__ == "__main__":
                                                     feature1 = 0, 
                                                     feature2 = 1, 
                                                     title = f'Normal Dist. Bimodal Majority, Unimodal Minority',
+                                                    save = True
+                                                    )
+    
+    '''
+    visualiser.plot_3d_scatter_multiple_datasets_px(datasets,
+                                                    feature1 = 0, 
+                                                    feature2 = 1,
+                                                    feature3 = 2,
+                                                    title = f'3d Scatter of generated Data')
+    '''
+    """
+
+    """
+    Bimodal Multinormal Experiment for Report - Data illustration
+    -------------------------------------------------------------------------------------------------------------------------------------------
+    """
+    from Visualiser import RawVisualiser
+    from gen_parameters import experiment_dict, alt_experiment_dict
+
+    visualiser = RawVisualiser()
+
+    dist_gen_spec = Multi_Modal_Dist_Generator(**alt_experiment_dict)
+
+
+    X_train, X_test, y_train, y_test = dist_gen_spec.prepare_data(0.2)
+    
+
+    datasets = [
+        (X_train, y_train, 'Train data'),
+    ]
+
+
+    #visualiser.plot_2d_scatter((data[0], data[1]),0, 1)
+    visualiser.plot_2d_scatter_multiple_datasets_px(datasets, 
+                                                    feature1 = 0, 
+                                                    feature2 = 14, 
+                                                    title = f'Bimodal Normal vs Unimodal Scatterplot',
+                                                    save = True
+                                                    )
+    
+    visualiser.plot_2d_scatter_multiple_datasets_px(datasets, 
+                                                    feature1 = 1, 
+                                                    feature2 = 2, 
+                                                    title = f'Bimodal Normal vs Unimodal Scatterplot',
                                                     save = True
                                                     )
     

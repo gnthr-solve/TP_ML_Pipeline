@@ -1,0 +1,5 @@
+classifier,accuracy,precision,recall,F1 score,ROC AUC Score
+Decision Tree,0.996,0.775,0.828,0.797,0.912
+Lightgbm,0.998,0.909,0.916,0.911,0.957
+Random Forest,0.998,0.976,0.858,0.912,0.929
+XGboost,0.998,0.925,0.927,0.925,0.963

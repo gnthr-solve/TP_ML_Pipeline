@@ -172,6 +172,7 @@ class RawVisualiser:
             legend=dict(x=0.85, y=1.0),
         )
 
+        title = title.replace(" ", "_")
         if save:
             fig.write_image(f"Figures/{title}.png", 
                             width=1920, 
