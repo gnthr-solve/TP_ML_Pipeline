@@ -199,7 +199,7 @@ class Assessor(Data):
 
 
     @timing_decorator
-    def create_calibration_curves(self, doc_dict, m = 10, spline = False, save = False, title = f'Calibration Curves'):
+    def create_calibration_curves(self, doc_dict, spline = False, save = False, title = f'Calibration Curves'):
 
         doc_reference_dict = {
             "n_features": 0,
@@ -226,10 +226,10 @@ class Assessor(Data):
         metrics = Metrics()
 
         if spline:
-            #metrics.calibration_curves_spline(names_dict, m = m, save = save, title = title)
-            metrics.calibration_curves_spline_alt(names_dict, save = save, title = title)
+            metrics.calibration_curves_spline(names_dict, save = save, title = title)
+            #metrics.calibration_curves_spline_alt(names_dict, save = save, title = title)
         else:
-            metrics.calibration_curves(names_dict, m = m, save = save, title = title)
+            metrics.calibration_curves(names_dict, save = save, title = title)
 
     
     @timing_decorator
@@ -555,7 +555,7 @@ class Metrics(Data):
 
 
 
-    def calibration_curves(self, names_dict, m = 10, save = False, title = f'Calibration Curves'):
+    def calibration_curves(self, names_dict, save = False, title = f'Calibration Curves'):
         predicted_proba_raw = self.data_dict['clsf_predictions_proba']
         class_orders = self.data_dict['classes_order']
         y_test = self.data_dict['org_y_test']
@@ -627,7 +627,7 @@ class Metrics(Data):
 
     
 
-    def calibration_curves_spline(self, names_dict, m = 10, save = False, title = f'Calibration Curves with Spline Interpolation'):
+    def calibration_curves_spline_alt(self, names_dict, m = 10, save = False, title = f'Calibration Curves with Spline Interpolation'):
         predicted_proba_raw = self.data_dict['clsf_predictions_proba']
         class_orders = self.data_dict['classes_order']
         y_test = self.data_dict['org_y_test']
@@ -702,7 +702,7 @@ class Metrics(Data):
                       )
         
         if save:
-            fig.write_image(f"Figures/'{title}'.png", 
+            fig.write_image(f"Figures/{title}.png", 
                             width=1920, 
                             height=1080, 
                             scale=3
@@ -712,8 +712,7 @@ class Metrics(Data):
 
     
 
-
-    def calibration_curves_spline_alt(self, names_dict, save = False, title = f'Calibration Curves with Spline Interpolation'):
+    def calibration_curves_spline(self, names_dict, save = False, title = f'Calibration Curves with Spline Interpolation'):
         predicted_proba_raw = self.data_dict['clsf_predictions_proba']
         class_orders = self.data_dict['classes_order']
         y_test = self.data_dict['org_y_test']
@@ -790,7 +789,7 @@ class Metrics(Data):
                       )
         
         if save:
-            fig.write_image(f"Figures/'{title}'.png", 
+            fig.write_image(f"Figures/{title}.png", 
                             width=1920, 
                             height=1080, 
                             scale=3
@@ -870,7 +869,7 @@ class Metrics(Data):
                       )
         
         if save:
-            fig.write_image(f"Figures/'{title}'.png", 
+            fig.write_image(f"Figures/{title}.png", 
                             width=1920, 
                             height=1080, 
                             scale=3
@@ -1009,7 +1008,7 @@ if __name__=="__main__":
     
     print(results_df)
     #print(results_df[results_df['classifier'] == 'Lightgbm'])
-    results_df.to_csv('Experiments/bimodal_maj_lower_dist.csv')
+    #results_df.to_csv('Experiments/bimodal_maj_lower_dist.csv')
 
 
     #calibration curves test
@@ -1023,8 +1022,8 @@ if __name__=="__main__":
             "classifier": True
         }
     
-    assessor.create_calibration_curves(doc_dict, spline = True, save = True, title = f'All Calibration Curves for 100k samples')
-    #assessor.create_decision_curves(harm_to_benefit = 0.2, doc_dict = doc_dict, m=20)
+    assessor.create_calibration_curves(doc_dict, spline = True, save = False, title = f'All Calibration Curves for 100k samples')
+    assessor.create_decision_curves(doc_dict = doc_dict, m=20)
     
 
     """

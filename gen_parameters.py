@@ -2,47 +2,6 @@ import numpy as np
 import scipy.stats as st
 
 
-
-"""
-Bimodal Multinormal Experiment for Report
--------------------------------------------------------------------------------------------------------------------------------------------
-"""
-#set the parameter dictionary for the MV normal. sigma is the standard deviation
-n = 15
-k = 1
-mu_c0_1 = np.concatenate([np.zeros(shape = (n-k)),6*np.ones(shape = (k))])
-mu_c0_2 = np.concatenate([6*np.ones(shape = (k)),np.zeros(shape = (n-k))])
-mu_c1 = 4*np.ones(shape = (n))
-
-sigma_c0_1 =  2* np.diag(np.ones(shape = (n)))
-sigma_c0_2 =  0.7* np.diag(np.ones(shape = (n)))
-
-sigma_c1 = np.ones(shape=(n,n)) + np.diag(np.ones(shape = (n)))
-#sigma_c1 = -1* np.ones(shape=(n,n)) + 3* np.diag(np.ones(shape = (n)))
-
-
-
-distributions = [st.multivariate_normal, st.beta]
-
-#set the parameter dictionaries as a list of dictionaries with parameter dictionaries for classes individually.
-dist_parameter_dicts = [{'modes_c0': 2,
-                         'modes_c1': 1,
-                         'mixing_weights_c0': [0.4, 0.6],
-                         'params_c0': {'mean': [mu_c0_1, mu_c0_2], 'cov': [sigma_c0_1, sigma_c0_2]},
-                         'params_c1': {'mean': [mu_c1], 'cov': [sigma_c1]}
-                        },
-]
-
-sizes = [19000, 1000]
-
-experiment_dict = {'distributions': distributions,
-                   'params_dict_list': dist_parameter_dicts,
-                   'sizes': sizes,
-                }
-
-
-
-
 """
 Alternative Bimodal Multinormal Experiment for Report
 -------------------------------------------------------------------------------------------------------------------------------------------
@@ -165,69 +124,17 @@ dist_parameter_dicts = [{'modes_c0': 2,
                         {'modes_c0': 1,
                          'modes_c1': 1,
                         #'mixing_weights_c0': [],
-                         'params_c0': {'loc': [0], 'scale': [1]},
-                         'params_c1': {'loc': [0], 'scale': [3]}
+                         'params_c0': {'loc': [0,2], 'scale': [1, 1]},
+                         'params_c1': {'loc': [0,0], 'scale': [3, 2]}
                         }
 ]
 
 sizes = [9000, 1000]
 
-mixed_test_dict = {'distributions': distributions,
-                   'params_dict_list': dist_parameter_dicts,
-                   'sizes': sizes,
-                   }
-
-
-
-"""
-Simple Default
--------------------------------------------------------------------------------------------------------------------------------------------
-"""
-n = 5
-mu_c0_1 = np.zeros(shape = (n))
-mu_c0_2 = 4*np.ones(shape = (n))
-mu_c1_1 = -2 * np.ones(shape = (n))
-mu_c1_2 =  2 * np.ones(shape = (n))
-sigma_c0_1 = np.array([[1,0,0,0,0],
-                       [0,2,0,0,0],
-                       [0,0,3,0,0],
-                       [0,0,0,3,0],
-                       [0,0,0,0,3],])
-sigma_c0_2 = np.array([[1,0,0,0,0],
-                       [0,1,0,0,0],
-                       [0,0,1,0,0],
-                       [0,0,0,1,0],
-                       [0,0,0,0,1],])
-
-sigma_c1_1 = np.ones(shape=(n,n)) + 2* np.diag(np.ones(shape = (n)))
-
-sigma_c1_2 = np.zeros(shape=(n,n)) + np.diag(np.ones(shape = (n)))
-
-
-distributions = [st.multivariate_normal, st.beta]
-
-#set the parameter dictionaries as a list of dictionaries with parameter dictionaries for classes individually.
-dist_parameter_dicts = [{'modes_c0': 2,
-                         'modes_c1': 2,
-                         'mixing_weights_c0': [0.3, 0.7],
-                         'mixing_weights_c1': [0.6, 0.4],
-                         'params_c0': {'mean': [mu_c0_1, mu_c0_2], 'cov': [sigma_c0_1, sigma_c0_2]},
-                         'params_c1': {'mean': [mu_c1_1, mu_c1_2], 'cov': [sigma_c1_1, sigma_c1_2]}
-                        },
-                        {'modes_c0': 1,
-                         'modes_c1': 1,
-                        #'mixing_weights_c0': [],
-                         'params_c0': {'a': [2,2], 'b': [4,2]},
-                         'params_c1': {'a': [1,1], 'b': [7,9]}
+mixed_experiment_dict = {'distributions': distributions,
+                         'params_dict_list': dist_parameter_dicts,
+                         'sizes': sizes,
                         }
-]
-
-sizes = [9500, 500]
-
-default_test_dict = {'distributions': distributions,
-                     'params_dict_list': dist_parameter_dicts,
-                     'sizes': sizes,
-                     }
 
 
 

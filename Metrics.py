@@ -4,7 +4,7 @@ import pandas as pd
 import plotly.express as px
 from scipy.stats import linregress
 from helper_tools import Data
-
+from scipy.interpolate import interp1d
 
 
 
@@ -315,25 +315,10 @@ class IterMetrics():
 
 class FMLP_Metrics(Data):
 
-    def __init__(self, std_metrics_dict):
+    #def __init__(self):
 
-        self.std_metric_list = [(name, metr_func) for name, metr_func in std_metrics_dict.items()]
 
-        '''
-        self.predictions_dict_list = [
-            {
-                **pred_dict,
-                'predicted_proba': (pred_dict['predicted_proba']
-                                    [:, np.where(pred_dict['classes'] == 1)[0]]
-                                    .flatten()
-                                    )
-            }
-            for pred_dict in predictions_dict_list
-        ]
-        '''
-
-        
-    def confusion_metrics(self):
+    def confusion_metrics(self, std_metric_list):
 
         y_test = self.data_dict['org_y_test']
         y_pred = self.data_dict['clsf_predictions_y']
@@ -346,17 +331,238 @@ class FMLP_Metrics(Data):
             y_clsf_pred = y_pred[i, j, k]
             y_clsf_pred = y_clsf_pred[~np.isnan(y_clsf_pred)]
 
-            evaluation = np.array([metr_func(y_i_test, y_clsf_pred) for (name, metr_func) in self.std_metric_list])
+            evaluation = np.array([metr_func(y_i_test, y_clsf_pred) for (name, metr_func) in std_metric_list])
 
             self.data_dict['std_metrics_res'][i, j, k, :] = evaluation
 
 
+    def calibration_curves(self, names_dict, save = False, title = f'Calibration Curves'):
+        predicted_proba_raw = self.data_dict['clsf_predictions_proba']
+        class_orders = self.data_dict['classes_order']
+        y_test = self.data_dict['org_y_test']
+
+        class_ratios = np.nansum(y_test, axis=1) / np.sum(~np.isnan(y_test), axis=1)
+        m = int(1 / min(class_ratios))
+
+        creation_dict ={
+        'mean_pred_proba': [np.arange(0, 1, 1/m)],
+        'mean_freq': [np.arange(0, 1, 1/m)],
+        'name': [['Optimum' for _ in range(m)]]
+        }
+        for (i,j,k) in self.data_dict['assignment_dict']:
+
+            corr_classes = class_orders[i, j, k]
+            
+            y_i_test = y_test[i]
+            y_i_test = y_i_test[~np.isnan(y_i_test)]
+
+            pred_probabilities = predicted_proba_raw[i, j, k]
+
+            # Drop rows with NaN values
+            pred_probabilities = pred_probabilities[~np.isnan(pred_probabilities).all(axis = 1)]
+            # Drop columns with NaN values
+            pred_probabilities = pred_probabilities[: , ~np.isnan(pred_probabilities).all(axis = 0)]
+
+            pred_proba = pred_probabilities[:, np.where(corr_classes == 1)[0]].flatten()
+            
+            sorted_indices = np.argsort(pred_proba)
+            sorted_probabilities = pred_proba[sorted_indices]
+            sorted_y_test = y_i_test[sorted_indices]
+
+            binned_probabilities = np.array_split(sorted_probabilities, m)
+            binned_y_test = np.array_split(sorted_y_test, m)
+
+            creation_dict['mean_pred_proba'].append([bin.sum()/len(bin) for bin in binned_probabilities])
+            creation_dict['mean_freq'].append([bin.sum()/len(bin) for bin in binned_y_test])
+            creation_dict['name'].append([names_dict[(i,j,k)] for _ in range(m)])
+
+        
+        #print(creation_dict['name'])
+        df_creation_dict = {
+            'Predicted Prob.': np.concatenate(creation_dict['mean_pred_proba']),
+            'Mean Frequency': np.concatenate(creation_dict['mean_freq']),
+            'Name': sum(creation_dict['name'], [])
+        }
+
+        df = pd.DataFrame(df_creation_dict)
+        #print(df)
+
+        fig = px.line(df, 
+                      x = 'Predicted Prob.', 
+                      y = 'Mean Frequency', 
+                      color = 'Name', 
+                      title = title +f'({m} bins)', 
+                      markers = True
+                      )
+        
+        if save:
+            fig.write_image(f"Figures/{title}.png", 
+                            width=1920, 
+                            height=1080, 
+                            scale=3
+                            )
+            
+        fig.show()
 
 
-    def net_benefit(self, harm_to_benefit):
 
-        self.NB = self.TP - harm_to_benefit * self.FP
+    def calibration_curves_spline(self, names_dict, save = False, title = f'Calibration Curves with Spline Interpolation'):
+        predicted_proba_raw = self.data_dict['clsf_predictions_proba']
+        class_orders = self.data_dict['classes_order']
+        y_test = self.data_dict['org_y_test']
 
+        class_ratios = np.nansum(y_test, axis=1) / np.sum(~np.isnan(y_test), axis=1)
+        m = 1 / min(class_ratios)
+        print(m)
+        m = int(m)
+
+        creation_dict ={
+        'mean_pred_proba': [np.arange(0, 1, 1/m)],
+        'mean_freq': [np.arange(0, 1, 1/m)],
+        'name': [['Optimum' for _ in range(m)]]
+        }
+        for (i,j,k) in self.data_dict['assignment_dict']:
+
+            corr_classes = class_orders[i, j, k]
+            
+            y_i_test = y_test[i].copy()
+            y_i_test = y_i_test[~np.isnan(y_i_test)]
+
+            pred_probabilities = predicted_proba_raw[i, j, k]
+            
+            # Drop rows with NaN values
+            pred_probabilities = pred_probabilities[~np.isnan(pred_probabilities).all(axis = 1)]
+            # Drop columns with NaN values
+            pred_probabilities = pred_probabilities[: , ~np.isnan(pred_probabilities).all(axis = 0)]
+            
+            pred_proba = pred_probabilities[:, np.where(corr_classes == 1)[0]].flatten()
+            
+            sorted_indices = np.argsort(pred_proba)
+            sorted_probabilities = pred_proba[sorted_indices]
+            sorted_y_test = y_i_test[sorted_indices]
+
+            binned_probabilities = np.array_split(sorted_probabilities, m)
+            binned_y_test = np.array_split(sorted_y_test, m)
+
+            mean_predicted_proba = [bin.sum()/len(bin) for bin in binned_probabilities]
+            
+            spline = interp1d(
+                x = mean_predicted_proba, 
+                y = [bin.sum()/len(bin) for bin in binned_y_test],
+                fill_value = 'extrapolate'
+                )
+
+            creation_dict['mean_pred_proba'].append(np.arange(0, 1, 1/m))
+            creation_dict['mean_freq'].append([spline(x) for x in np.arange(0, 1, 1/m)])
+            creation_dict['name'].append([names_dict[(i,j,k)] for _ in range(m)])
+
+        
+        #print(creation_dict['name'])
+        df_creation_dict = {
+            'Predicted Prob.': np.concatenate(creation_dict['mean_pred_proba']),
+            'Mean Frequency': np.concatenate(creation_dict['mean_freq']),
+            'Name': sum(creation_dict['name'], [])
+        }
+
+        df = pd.DataFrame(df_creation_dict)
+        #print(df)
+
+        fig = px.line(df, 
+                      x = 'Predicted Prob.', 
+                      y = 'Mean Frequency', 
+                      color = 'Name', 
+                      title = title +f'({m} bins)', 
+                      markers = True
+                      )
+        
+        if save:
+            fig.write_image(f"Figures/{title}.png", 
+                            width=1920, 
+                            height=1080, 
+                            scale=3
+                            )
+            
+        fig.show()
+
+
+
+    def decision_curves(self, names_dict, m = 10, save = False, title = f'Decision Curves'):
+        predicted_proba_raw = self.data_dict['clsf_predictions_proba']
+        class_orders = self.data_dict['classes_order']
+        y_test = self.data_dict['org_y_test']
+
+        creation_dict ={
+        #'pred_threshold': [np.arange(0,1, 1/m)],
+        'pred_threshold': [],
+        #'net_benefit': [np.arange(0,1, 1/m)],
+        'net_benefit': [],
+        #'name': [['Treat All' for _ in range(m)]]
+        'name': []
+        }
+        for (i,j,k) in self.data_dict['assignment_dict']:
+
+            corr_classes = class_orders[i, j, k]
+            
+            y_i_test = y_test[i]
+            y_i_test = y_i_test[~np.isnan(y_i_test)].astype(int)
+
+            pred_probabilities = predicted_proba_raw[i, j, k]
+
+            # Drop rows with NaN values
+            pred_probabilities = pred_probabilities[~np.isnan(pred_probabilities).all(axis = 1)]
+            # Drop columns with NaN values
+            pred_probabilities = pred_probabilities[: , ~np.isnan(pred_probabilities).all(axis = 0)]
+
+            pred_proba = pred_probabilities[:, np.where(corr_classes == 1)[0]].flatten()
+
+            net_benefit_list = []
+            for threshold in np.arange(1/m, 1, 1/m):
+                
+                y_pred = (pred_proba > threshold).astype(int)
+
+                y_test_1_mask = y_i_test == 1
+                y_pred_1_mask = y_pred == 1
+                #print('Number predicted positive:', np.sum(y_pred_1_mask))
+                true_pos = np.sum((y_test_1_mask) & (y_pred_1_mask))
+                false_pos = np.sum((~y_test_1_mask) & (y_pred_1_mask))
+                #print('True Positives:', true_pos, 'False Positives:', false_pos)
+                #print('Threshold:', threshold, 'Net Benefit:',true_pos - harm_to_benefit*false_pos)
+                
+                net_benefit = (true_pos - (threshold/1-threshold)*false_pos)/len(y_i_test)
+                #net_benefit = (true_pos - harm_to_benefit*false_pos)/len(y_i_test)
+                net_benefit_list.append(net_benefit)
+
+            creation_dict['pred_threshold'].append(np.arange(1/m, 1, 1/m))
+            creation_dict['net_benefit'].append(net_benefit_list)
+            creation_dict['name'].append([names_dict[(i,j,k)] for _ in range(m-1)])
+
+        
+        #print(creation_dict['name'])
+        df_creation_dict = {
+            'Prediction Threshold': np.concatenate(creation_dict['pred_threshold']),
+            'Net Benefit': np.concatenate(creation_dict['net_benefit']),
+            'Name': sum(creation_dict['name'], [])
+        }
+        #print(df_creation_dict)
+        df = pd.DataFrame(df_creation_dict)
+        #print(df)
+
+        fig = px.line(df, 
+                      x = 'Prediction Threshold', 
+                      y = 'Net Benefit', 
+                      color = 'Name', 
+                      title = title, 
+                      markers = True
+                      )
+        
+        if save:
+            fig.write_image(f"Figures/{title}.png", 
+                            width=1920, 
+                            height=1080, 
+                            scale=3
+                            )
+            
+        fig.show()
 
 
 
