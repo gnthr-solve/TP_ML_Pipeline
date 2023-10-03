@@ -227,7 +227,7 @@ class Assessor(Data):
 
         if spline:
             metrics.calibration_curves_spline(names_dict, save = save, title = title)
-            #metrics.calibration_curves_spline_alt(names_dict, save = save, title = title)
+        
         else:
             metrics.calibration_curves(names_dict, save = save, title = title)
 
@@ -394,10 +394,6 @@ class Generator(Data):
 
 
 
-
-
-
-
 class DataBalancer(Data):
 
     def __init__(self, bal_params_dict = {}):
@@ -453,7 +449,6 @@ class DataBalancer(Data):
             self.data_dict['bal_y_train'][data_ind, bal_ind, :n] = resample[1]
 
             
-
 
 
 
@@ -618,91 +613,6 @@ class Metrics(Data):
         
         if save:
             fig.write_image(f"Figures/'{title}'.png", 
-                            width=1920, 
-                            height=1080, 
-                            scale=3
-                            )
-            
-        fig.show()
-
-    
-
-    def calibration_curves_spline_alt(self, names_dict, m = 10, save = False, title = f'Calibration Curves with Spline Interpolation'):
-        predicted_proba_raw = self.data_dict['clsf_predictions_proba']
-        class_orders = self.data_dict['classes_order']
-        y_test = self.data_dict['org_y_test']
-
-        class_ratios = np.nansum(y_test, axis=1) / np.sum(~np.isnan(y_test), axis=1)
-        max_mean_freq = max(class_ratios) * m
-
-        creation_dict ={
-        'mean_pred_proba': [np.linspace(0, max_mean_freq, m)],
-        'mean_freq': [np.linspace(0, max_mean_freq, m)],
-        'name': [['Optimum' for _ in range(m)]]
-        }
-        for (i,j,k) in self.data_dict['assignment_dict']:
-
-            corr_classes = class_orders[i, j, k]
-            
-            y_i_test = y_test[i].copy()
-            y_i_test = y_i_test[~np.isnan(y_i_test)]
-            print(f'Length of y_{i}_test: ', len(y_i_test))
-            print(f'Number of positive in y_{i}_test: ', np.sum(y_i_test))
-
-            pred_probabilities = predicted_proba_raw[i, j, k]
-            
-            # Drop rows with NaN values
-            pred_probabilities = pred_probabilities[~np.isnan(pred_probabilities).all(axis = 1)]
-            # Drop columns with NaN values
-            pred_probabilities = pred_probabilities[: , ~np.isnan(pred_probabilities).all(axis = 0)]
-            
-            pred_proba = pred_probabilities[:, np.where(corr_classes == 1)[0]].flatten()
-            print(len(y_i_test) == len(pred_proba))
-            
-            sorted_indices = np.argsort(pred_proba)
-            sorted_probabilities = pred_proba[sorted_indices]
-            sorted_y_test = y_i_test[sorted_indices]
-
-            binned_probabilities = np.array_split(sorted_probabilities, m)
-            binned_y_test = np.array_split(sorted_y_test, m)
-
-            mean_predicted_proba = [bin.sum()/len(bin) for bin in binned_probabilities]
-            print(names_dict[(i,j,k)], mean_predicted_proba)
-            print(f'Binned y_{i}_test: ', [bin.sum()/len(bin) for bin in binned_y_test])
-            print(f'The binned y_{i}_test means: ', sum([bin.sum()/len(bin) for bin in binned_y_test]))
-            print(f'The binned y_{i}_test sums ', [bin.sum() for bin in binned_y_test])
-            print(f'The bin lengths: ', [len(bin) for bin in binned_y_test])
-            spline = interp1d(
-                x = mean_predicted_proba, 
-                y = [bin.sum()/len(bin) for bin in binned_y_test],
-                fill_value = 'extrapolate'
-                )
-
-            creation_dict['mean_pred_proba'].append(np.linspace(0, max(mean_predicted_proba), m))
-            creation_dict['mean_freq'].append([spline(x) for x in np.linspace(0, max_mean_freq, m)])
-            creation_dict['name'].append([names_dict[(i,j,k)] for _ in range(m)])
-
-        
-        #print(creation_dict['name'])
-        df_creation_dict = {
-            'Predicted Prob.': np.concatenate(creation_dict['mean_pred_proba']),
-            'Mean Frequency': np.concatenate(creation_dict['mean_freq']),
-            'Name': sum(creation_dict['name'], [])
-        }
-
-        df = pd.DataFrame(df_creation_dict)
-        #print(df)
-
-        fig = px.line(df, 
-                      x = 'Predicted Prob.', 
-                      y = 'Mean Frequency', 
-                      color = 'Name', 
-                      title = title +f'({m} bins)', 
-                      markers = True
-                      )
-        
-        if save:
-            fig.write_image(f"Figures/{title}.png", 
                             width=1920, 
                             height=1080, 
                             scale=3
@@ -889,7 +799,7 @@ if __name__=="__main__":
     from loguru import logger
     from imblearn.over_sampling import ADASYN,RandomOverSampler,KMeansSMOTE,SMOTE,BorderlineSMOTE,SVMSMOTE,SMOTENC, RandomOverSampler
     from Visualiser import RawVisualiser
-    from gen_parameters import mixed_3d_test_dict, mixed_test_dict, alt_experiment_dict
+    from gen_parameters import mixed_3d_test_dict, alt_experiment_dict
     from sklearn.linear_model import LogisticRegression
     from sklearn.tree import DecisionTreeClassifier
     from sklearn.ensemble import RandomForestClassifier
@@ -921,47 +831,6 @@ if __name__=="__main__":
 
     visualiser = RawVisualiser()
 
-    
-
-    """
-    Assessor test
-    -------------------------------------------------------------------------------------------------------------------------------------------
-    
-    
-    #assessor = Assessor(0.2, [alt_experiment_dict], balancing_methods, classifiers_dict)
-    assessor = Assessor(0.2, [mixed_3d_test_dict], balancing_methods, classifiers_dict)
-
-    assessor.generate()
-    assessor.balance()
-    assessor.clsf_pred()
-
-    #calc_std_metrics() test
-    #-------------------------------------------------------------------------------------------------------------------------------------------
-    results_df = pd.DataFrame()
-    new_results_df = assessor.calc_std_metrics()
-
-    #print(new_results_df)
-    results_df = pd.concat([results_df, new_results_df],
-                           ignore_index=True,
-                           axis = 0).reset_index(drop=True)
-    
-    #print(results_df)
-    #print(results_df[results_df['classifier'] == 'Lightgbm'])
-    #results_df.to_csv('Experiments/bimodal_maj_experiment.csv')
-    #calibration curves test
-    #-------------------------------------------------------------------------------------------------------------------------------------------
-    doc_dict = {
-            "n_features": False,
-            "n_samples": False,
-            "class_ratio": False, 
-            "doc_string": False,
-            "balancer": True, 
-            "classifier": True
-        }
-    assessor.create_calibration_curves(doc_dict, m=20, spline = True)
-    #assessor.create_decision_curves( doc_dict = doc_dict, m=20)
-    """
-    
 
 
     """

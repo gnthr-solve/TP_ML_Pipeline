@@ -106,10 +106,6 @@ class Assessor(Data):
             generator = FMLP_Generator(**generation_dict)
             generator.prepare_data(self.test_size)
 
-        #print(self.data_dict)
-        #print({key: np.shape(value) for key, value in self.data_dict.items()})
-
-        #print((n,d))
 
 
     def balance(self, bal_params_dicts = {}):
@@ -135,9 +131,6 @@ class Assessor(Data):
         
         k = max_c1 + max_total_samples
 
-        #k = 2 * max([np.sum(self.data_dict['org_y_train'][data_ind] == 0) for data_ind in range(a)]) + 1
-        #print(k)
-        #print(np.shape(self.data_dict['org_y_train']))
         print('Number of individual balancing steps: \n', a*b,
               'Size balance array X: \n', a*b*k*self.d)
 
@@ -147,10 +140,6 @@ class Assessor(Data):
         data_balancer = FMLP_DataBalancer(bal_params_dicts)
         
         data_balancer.balance_data()
-
-        #print(self.data_dict['bal_y_train'])
-        #print(self.data_dict['pos_doc'])
-        #print({key: np.shape(value) for key, value in self.data_dict.items()})
         
 
 
@@ -168,9 +157,6 @@ class Assessor(Data):
         data_classifier.fit()
 
         data_classifier.predict()
-
-        #print({key: np.shape(value) for key, value in self.data_dict.items()})
-        #print(self.data_dict['classes_order'])
 
 
 
@@ -201,11 +187,8 @@ class Assessor(Data):
                           for i in range(self.exp_dim[0]) 
                           for j in range(self.exp_dim[1]) 
                           for k in range(self.exp_dim[2])]
-        
-        #print(reference_list)
 
         reference_list = [extract_table_info(alist[0])+[alist[1][0], alist[2][0]] for alist in reference_list]
-        #print(reference_list)
 
         reference_df = pd.DataFrame(reference_list, columns= ['n_features', 
                                                               'n_samples', 
@@ -215,10 +198,6 @@ class Assessor(Data):
                                                               'classifier'])
 
         results_df = pd.concat([reference_df, results_df], axis = 1)
-        
-        #print({key: np.shape(value) for key, value in self.data_dict.items()})
-        #print(results_df)
-        #print(self.data_dict['classes_order'])
 
         return results_df
     
@@ -346,7 +325,7 @@ if __name__=="__main__":
     assessor.generate()
     assessor.balance()
     assessor.clsf_pred()
-    assessor.calc_metrics()
+    assessor.calc_std_metrics()
     
     
     

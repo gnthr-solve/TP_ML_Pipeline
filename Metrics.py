@@ -492,11 +492,8 @@ class FMLP_Metrics(Data):
         y_test = self.data_dict['org_y_test']
 
         creation_dict ={
-        #'pred_threshold': [np.arange(0,1, 1/m)],
         'pred_threshold': [],
-        #'net_benefit': [np.arange(0,1, 1/m)],
         'net_benefit': [],
-        #'name': [['Treat All' for _ in range(m)]]
         'name': []
         }
         for (i,j,k) in self.data_dict['assignment_dict']:
