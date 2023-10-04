@@ -486,24 +486,29 @@ class FMLP_Metrics(Data):
 
 
 
-    def decision_curves(self, names_dict, m = 10, save = False, title = f'Decision Curves'):
+    def decision_curves(self, names_dict, data_ind = 0, m = 10, save = False, title = f'Decision Curves'):
         predicted_proba_raw = self.data_dict['clsf_predictions_proba']
         class_orders = self.data_dict['classes_order']
         y_test = self.data_dict['org_y_test']
 
+        y_i_test = y_test[data_ind]
+        y_i_test = y_i_test[~np.isnan(y_i_test)].astype(int)
+        
         creation_dict ={
-        'pred_threshold': [],
-        'net_benefit': [],
-        'name': []
+        'pred_threshold': [np.arange(0, 1, 1/m)],
+        #'net_benefit': [[(np.sum(y_i_test) - (threshold/(1-threshold))*np.sum(y_i_test^1))/len(y_i_test)
+        #                 for threshold in np.arange(0,1, 1/m)]],
+        'net_benefit': [[np.mean(y_i_test == 1) - (np.mean(y_i_test == 1) / (1 - np.mean(y_i_test == 1))) * threshold
+                         for threshold in np.arange(0, 1, 1/m)]],
+        'name': [['Treat All' for _ in range(m)]]
         }
-        for (i,j,k) in self.data_dict['assignment_dict']:
 
-            corr_classes = class_orders[i, j, k]
-            
-            y_i_test = y_test[i]
-            y_i_test = y_i_test[~np.isnan(y_i_test)].astype(int)
+        assign_keys = set([(j,k) for (i,j,k) in self.data_dict['assignment_dict']])
+        for (j,k) in assign_keys:
 
-            pred_probabilities = predicted_proba_raw[i, j, k]
+            corr_classes = class_orders[data_ind, j, k]
+
+            pred_probabilities = predicted_proba_raw[data_ind, j, k]
 
             # Drop rows with NaN values
             pred_probabilities = pred_probabilities[~np.isnan(pred_probabilities).all(axis = 1)]
@@ -513,7 +518,7 @@ class FMLP_Metrics(Data):
             pred_proba = pred_probabilities[:, np.where(corr_classes == 1)[0]].flatten()
 
             net_benefit_list = []
-            for threshold in np.arange(1/m, 1, 1/m):
+            for threshold in np.arange(0, 1, 1/m):
                 
                 y_pred = (pred_proba > threshold).astype(int)
 
@@ -523,15 +528,14 @@ class FMLP_Metrics(Data):
                 true_pos = np.sum((y_test_1_mask) & (y_pred_1_mask))
                 false_pos = np.sum((~y_test_1_mask) & (y_pred_1_mask))
                 #print('True Positives:', true_pos, 'False Positives:', false_pos)
-                #print('Threshold:', threshold, 'Net Benefit:',true_pos - harm_to_benefit*false_pos)
+                #print('Threshold:', threshold, 'Net Benefit:', (true_pos - (threshold/(1-threshold))*false_pos)/len(y_i_test))
                 
-                net_benefit = (true_pos - (threshold/1-threshold)*false_pos)/len(y_i_test)
-                #net_benefit = (true_pos - harm_to_benefit*false_pos)/len(y_i_test)
+                net_benefit = (true_pos - (threshold/(1-threshold))*false_pos)/len(y_i_test)
                 net_benefit_list.append(net_benefit)
 
-            creation_dict['pred_threshold'].append(np.arange(1/m, 1, 1/m))
+            creation_dict['pred_threshold'].append(np.arange(0, 1, 1/m))
             creation_dict['net_benefit'].append(net_benefit_list)
-            creation_dict['name'].append([names_dict[(i,j,k)] for _ in range(m-1)])
+            creation_dict['name'].append([names_dict[(data_ind,j,k)] for _ in range(m)])
 
         
         #print(creation_dict['name'])
@@ -552,6 +556,7 @@ class FMLP_Metrics(Data):
                       markers = True
                       )
         
+        title = title.replace(" ", "_")
         if save:
             fig.write_image(f"Figures/{title}.png", 
                             width=1920, 

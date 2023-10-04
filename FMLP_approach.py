@@ -75,6 +75,7 @@ class Assessor(Data):
             generator = Generator(**generation_dict)
             generator.prepare_data(self.test_size)
 
+        print('Size of generated X_train array in mb: \n', self.data_dict['org_X_train'].nbytes/(2**20))
         #print(self.data_dict)
         #print({key: np.shape(value) for key, value in self.data_dict.items()})
 
@@ -110,11 +111,13 @@ class Assessor(Data):
         #k = 2 * max([np.sum(self.data_dict['org_y_train'][data_ind] == 0) for data_ind in range(a)]) + 1
         #print(k)
         #print(np.shape(self.data_dict['org_y_train']))
-        print('Number of individual balancing steps: \n', a*b, '\n',
-              'Size balance array X: \n', a*b*k*self.d)
+        print('Number of individual balancing steps: \n', a*b)
+        print('No. elements in balance array X: \n', a*b*k*self.d)
 
         self.data_dict['bal_X_train'] = np.full(shape = (a, b, k, self.d), fill_value = np.nan)
         self.data_dict['bal_y_train'] = np.full(shape = (a, b, k, ), fill_value = np.nan)
+
+        print('Size of balance array X in mb: \n', self.data_dict['bal_X_train'].nbytes/(2**20))
 
         data_balancer = DataBalancer(bal_params_dicts)
 
@@ -134,8 +137,9 @@ class Assessor(Data):
         self.data_dict['clsf_predictions_proba'] = np.full(shape = self.exp_dim + (n, 2), fill_value = np.nan)
         self.data_dict['classes_order'] = np.full(shape = self.exp_dim + (2,), fill_value = np.nan)
 
-        print('Number of classifiers to train: \n', self.exp_dim[0]*self.exp_dim[1]*self.exp_dim[2], '\n',
-              'Size classifier array: \n', self.exp_dim[0]*self.exp_dim[1]*self.exp_dim[2]*n*2)
+        print('Number of classifiers to train: \n', self.exp_dim[0]*self.exp_dim[1]*self.exp_dim[2])
+        print('No. elements classifier predicted probabilities array: \n', self.exp_dim[0]*self.exp_dim[1]*self.exp_dim[2]*n*2)
+        
         data_classifier = DataClassifier()
 
         print('Fitting started.')
@@ -144,6 +148,7 @@ class Assessor(Data):
         print('Fitting complete. Prediction started')
         data_classifier.predict()
 
+        print('Size of classifier predicted probabilities array in mb: \n', self.data_dict['clsf_predictions_proba'].nbytes/(2**20))
         #print({key: np.shape(value) for key, value in self.data_dict.items()})
         #print(self.data_dict['classes_order'])
 
@@ -233,7 +238,7 @@ class Assessor(Data):
 
     
     @timing_decorator
-    def create_decision_curves(self, doc_dict, m = 10, save = False, title = f'Decision Curves'):
+    def create_decision_curves(self, doc_dict, data_ind = 0, m = 10, save = False, title = f'Decision Curves'):
 
         doc_reference_dict = {
             "n_features": 0,
@@ -259,7 +264,7 @@ class Assessor(Data):
 
         metrics = Metrics()
 
-        metrics.decision_curves(names_dict, m = m, save = save, title = title)
+        metrics.decision_curves(names_dict, data_ind = data_ind, m = m, save = save, title = title)
 
 
 
@@ -698,6 +703,7 @@ class Metrics(Data):
                       markers = True
                       )
         
+        title = title.replace(" ", "_")
         if save:
             fig.write_image(f"Figures/{title}.png", 
                             width=1920, 
@@ -709,27 +715,29 @@ class Metrics(Data):
 
 
 
-    def decision_curves(self, names_dict, m = 10, save = False, title = f'Decision Curves'):
+    def decision_curves(self, names_dict, data_ind = 0, m = 10, save = False, title = f'Decision Curves'):
         predicted_proba_raw = self.data_dict['clsf_predictions_proba']
         class_orders = self.data_dict['classes_order']
         y_test = self.data_dict['org_y_test']
 
+        y_i_test = y_test[data_ind]
+        y_i_test = y_i_test[~np.isnan(y_i_test)].astype(int)
+        
         creation_dict ={
-        #'pred_threshold': [np.arange(0,1, 1/m)],
-        'pred_threshold': [],
-        #'net_benefit': [np.arange(0,1, 1/m)],
-        'net_benefit': [],
-        #'name': [['Treat All' for _ in range(m)]]
-        'name': []
+        'pred_threshold': [np.arange(0, 1, 1/m)],
+        #'net_benefit': [[(np.sum(y_i_test) - (threshold/(1-threshold))*np.sum(y_i_test^1))/len(y_i_test)
+        #                 for threshold in np.arange(0,1, 1/m)]],
+        'net_benefit': [[np.mean(y_i_test == 1) - (np.mean(y_i_test == 1) / (1 - np.mean(y_i_test == 1))) * threshold
+                         for threshold in np.arange(0, 1, 1/m)]],
+        'name': [['Treat All' for _ in range(m)]]
         }
-        for (i,j,k) in self.data_dict['assignment_dict']:
 
-            corr_classes = class_orders[i, j, k]
-            
-            y_i_test = y_test[i]
-            y_i_test = y_i_test[~np.isnan(y_i_test)].astype(int)
+        assign_keys = set([(j,k) for (i,j,k) in self.data_dict['assignment_dict']])
+        for (j,k) in assign_keys:
 
-            pred_probabilities = predicted_proba_raw[i, j, k]
+            corr_classes = class_orders[data_ind, j, k]
+
+            pred_probabilities = predicted_proba_raw[data_ind, j, k]
 
             # Drop rows with NaN values
             pred_probabilities = pred_probabilities[~np.isnan(pred_probabilities).all(axis = 1)]
@@ -739,7 +747,7 @@ class Metrics(Data):
             pred_proba = pred_probabilities[:, np.where(corr_classes == 1)[0]].flatten()
 
             net_benefit_list = []
-            for threshold in np.arange(1/m, 1, 1/m):
+            for threshold in np.arange(0, 1, 1/m):
                 
                 y_pred = (pred_proba > threshold).astype(int)
 
@@ -749,15 +757,14 @@ class Metrics(Data):
                 true_pos = np.sum((y_test_1_mask) & (y_pred_1_mask))
                 false_pos = np.sum((~y_test_1_mask) & (y_pred_1_mask))
                 #print('True Positives:', true_pos, 'False Positives:', false_pos)
-                #print('Threshold:', threshold, 'Net Benefit:',true_pos - harm_to_benefit*false_pos)
+                #print('Threshold:', threshold, 'Net Benefit:', (true_pos - (threshold/(1-threshold))*false_pos)/len(y_i_test))
                 
-                net_benefit = (true_pos - (threshold/1-threshold)*false_pos)/len(y_i_test)
-                #net_benefit = (true_pos - harm_to_benefit*false_pos)/len(y_i_test)
+                net_benefit = (true_pos - (threshold/(1-threshold))*false_pos)/len(y_i_test)
                 net_benefit_list.append(net_benefit)
 
-            creation_dict['pred_threshold'].append(np.arange(1/m, 1, 1/m))
+            creation_dict['pred_threshold'].append(np.arange(0, 1, 1/m))
             creation_dict['net_benefit'].append(net_benefit_list)
-            creation_dict['name'].append([names_dict[(i,j,k)] for _ in range(m-1)])
+            creation_dict['name'].append([names_dict[(data_ind,j,k)] for _ in range(m)])
 
         
         #print(creation_dict['name'])
@@ -778,6 +785,7 @@ class Metrics(Data):
                       markers = True
                       )
         
+        title = title.replace(" ", "_")
         if save:
             fig.write_image(f"Figures/{title}.png", 
                             width=1920, 
@@ -849,7 +857,7 @@ if __name__=="__main__":
     }
 
     classifiers_dict = {
-    #"Logistic Regression": LogisticRegression,
+    "Logistic Regression": LogisticRegression,
     "Decision Tree": DecisionTreeClassifier,
     "Random Forest": RandomForestClassifier,
     #"SVC": SVC,
@@ -858,7 +866,7 @@ if __name__=="__main__":
     "Lightgbm": LGBMClassifier
     }
 
-    assessor = Assessor(0.2, [alt_experiment_dict], balancing_methods, classifiers_dict)
+    assessor = Assessor(0.2, [mixed_3d_test_dict], balancing_methods, classifiers_dict)
     
 
     assessor.generate()
@@ -891,8 +899,8 @@ if __name__=="__main__":
             "classifier": True
         }
     
-    assessor.create_calibration_curves(doc_dict, spline = True, save = False, title = f'All Calibration Curves for 100k samples')
-    assessor.create_decision_curves(doc_dict = doc_dict, m=20)
+    #assessor.create_calibration_curves(doc_dict, spline = True, save = False, title = f'All Calibration Curves for 100k samples')
+    assessor.create_decision_curves(doc_dict = doc_dict, m=20, save = False, title = f'All Decision Curves for 100k samples')
     
 
     """

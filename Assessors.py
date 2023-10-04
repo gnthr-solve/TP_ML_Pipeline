@@ -237,7 +237,7 @@ class Assessor(Data):
 
     
     
-    def create_decision_curves(self, doc_dict, m = 10, save = False, title = f'Decision Curves'):
+    def create_decision_curves(self, doc_dict, data_ind = 0, m = 10, save = False, title = f'Decision Curves'):
 
         doc_reference_dict = {
             "n_features": 0,
@@ -263,7 +263,7 @@ class Assessor(Data):
 
         metrics = FMLP_Metrics()
 
-        metrics.decision_curves(names_dict, m = m, save = save, title = title)
+        metrics.decision_curves(names_dict, data_ind = data_ind, m = m, save = save, title = title)
 
     
 
