@@ -13,7 +13,7 @@ from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
 
 from Assessors import Assessor
-from gen_parameters import mixed_3d_test_dict, mixed_test_dict
+from gen_parameters import presentation_experiment_dict
 from helper_tools import extract_table_info, create_simple_normal_dict_list
 
 
@@ -27,7 +27,7 @@ balancing_methods = {
 "Unbalanced": None,
 "ADASYN": ADASYN,
 "RandomOverSampler": RandomOverSampler,
-#"KMeansSMOTE": KMeansSMOTE,
+"KMeansSMOTE": KMeansSMOTE,
 "SMOTE": SMOTE,
 "BorderlineSMOTE": BorderlineSMOTE,
 "SVMSMOTE": SVMSMOTE,
@@ -57,33 +57,9 @@ class_distance_list = [5, 4, 3, 2.5, 2, 1.5, 1]
 
 
 """
-First run standard MV-Normal class distance
+Class distance
 -------------------------------------------------------------------------------------------------------------------------------------------
 
-#gen_dict_list = [mixed_3d_test_dict, mixed_test_dict]
-
-#for n_samples in n_samples_list:
-
-gen_dict_list = create_simple_normal_dict_list(n_samples_list[:1], n_features_list[:], class_ratio_list[:2], class_distance_list[:1])
-#print(gen_dict_list)
-
-assessor = Assessor(0.2, gen_dict_list, balancing_methods, classifiers_dict)
-
-assessor.generate()
-assessor.balance()
-assessor.clsf_pred()
-
-results_df = assessor.calc_metrics()
-results_df['cluster distance'] = [class_distance_list[0] for _ in range(len(results_df))]
-print(results_df)
-results_df.to_csv('Experiments/cls_dist_std_mv_normal.csv')
-"""
-
-
-"""
-First Run class distance
--------------------------------------------------------------------------------------------------------------------------------------------
-"""
 
 for distance in class_distance_list[6:]:
 
@@ -112,3 +88,96 @@ for distance in class_distance_list[6:]:
     print(results_df)
     results_df.to_csv('Experiments/cls_dist_std_mv_normal.csv')
 
+"""
+
+
+
+"""
+Presentation Experiment
+-------------------------------------------------------------------------------------------------------------------------------------------
+"""
+
+
+assessor = Assessor(0.2, [presentation_experiment_dict], balancing_methods, classifiers_dict)
+
+assessor.generate()
+assessor.balance()
+assessor.clsf_pred()
+
+results_df = assessor.calc_std_metrics()
+print(results_df)
+
+
+results_df.to_csv('Experiments/presentation_results.csv')
+
+
+#All calibration curves
+#-------------------------------------------------------------------------------------------------------------------------------------------
+doc_dict = {
+        "n_features": False,
+        "n_samples": False,
+        "class_ratio": False, 
+        "doc_string": False,
+        "balancer": True, 
+        "classifier": True
+    }
+
+assessor.create_confusion_plots(doc_dict, feature1=0, feature2=2)
+assessor.create_calibration_curves(doc_dict, spline = True, save = False, title = f'All Calibration Curves')
+assessor.create_decision_curves(doc_dict = doc_dict, m=20, save = False, title = f'All Decision Curves')
+
+
+
+"""
+Presentation Experiment - Balancer Specific Calibration Curves
+-------------------------------------------------------------------------------------------------------------------------------------------
+
+
+balancing_methods = {
+"Unbalanced": None,
+"ADASYN": ADASYN,
+"RandomOverSampler": RandomOverSampler,
+"KMeansSMOTE": KMeansSMOTE,
+"SMOTE": SMOTE,
+"BorderlineSMOTE": BorderlineSMOTE,
+"SVMSMOTE": SVMSMOTE,
+#"SMOTENC": SMOTENC,
+}
+
+classifiers_dict = {
+"Decision Tree": DecisionTreeClassifier,
+"Random Forest": RandomForestClassifier,
+"Logistic Regression": LogisticRegression,
+#"SVC": SVC,
+#"Naive Bayes": GaussianNB,
+"XGboost": XGBClassifier,
+"Lightgbm": LGBMClassifier
+}
+
+m = 20
+for name, bal in balancing_methods.items():
+
+    balancer_dict = {name: bal}
+    #print(balancer_dict)
+    assessor = Assessor(0.2, [presentation_experiment_dict], balancer_dict, classifiers_dict)
+    
+    assessor.generate()
+    assessor.balance()
+    assessor.clsf_pred()
+
+    #calibration curves test
+    #-------------------------------------------------------------------------------------------------------------------------------------------
+    doc_dict = {
+            "n_features": False,
+            "n_samples": False,
+            "class_ratio": False, 
+            "doc_string": False,
+            "balancer": False, 
+            "classifier": True
+        }
+    
+    assessor.create_confusion_plots(doc_dict, feature1=0, feature2=2)
+    assessor.create_calibration_curves(doc_dict, spline = True, save = False, title = f'Calibration Curves for {name}')
+    assessor.create_decision_curves(doc_dict = doc_dict, m = 20, save = False, title = f'Decision Curves for {name}')
+
+"""

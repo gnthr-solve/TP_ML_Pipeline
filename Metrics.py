@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 from scipy.stats import linregress
+from Visualiser import CLSFVisualiser
 from helper_tools import Data
 from scipy.interpolate import interp1d
 
@@ -156,8 +157,6 @@ class OwnMetrics():
 
 
 
-
-  
 class IterMetrics():
 
     def __init__(self, 
@@ -336,6 +335,40 @@ class FMLP_Metrics(Data):
             self.data_dict['std_metrics_res'][i, j, k, :] = evaluation
 
 
+    def confusion_scatter(self, feature1, feature2, names_dict, feature_map, save = False):
+
+        clsf_visualiser = CLSFVisualiser()
+
+        X_test = self.data_dict['org_X_test']
+        y_test = self.data_dict['org_y_test']
+        y_pred = self.data_dict['clsf_predictions_y']
+
+        for (i,j,k) in self.data_dict['assignment_dict']:
+
+            y_i_test = y_test[i]
+            y_i_test = y_i_test[~np.isnan(y_i_test)]
+
+            X_i_test = X_test[i]
+            # Drop rows with NaN values
+            X_i_test = X_i_test[~np.isnan(X_i_test).all(axis = 1)]
+            # Drop columns with NaN values
+            X_i_test = X_i_test[: , ~np.isnan(X_i_test).all(axis = 0)]
+
+            y_clsf_pred = y_pred[i, j, k]
+            y_clsf_pred = y_clsf_pred[~np.isnan(y_clsf_pred)]
+
+
+            clsf_visualiser.confusion_scatterplot(X_i_test,
+                                                  y_i_test,
+                                                  y_clsf_pred,
+                                                  feature1 = feature1, 
+                                                  feature2 = feature2,
+                                                  feature_map= feature_map,
+                                                  title = f'{names_dict[(i,j,k)]} Confusion Scatterplot',
+                                                  save = save
+                                                )
+
+
     def calibration_curves(self, names_dict, save = False, title = f'Calibration Curves'):
         predicted_proba_raw = self.data_dict['clsf_predictions_proba']
         class_orders = self.data_dict['classes_order']
@@ -413,7 +446,7 @@ class FMLP_Metrics(Data):
 
         class_ratios = np.nansum(y_test, axis=1) / np.sum(~np.isnan(y_test), axis=1)
         m = 1 / min(class_ratios)
-        print(m)
+        #print(m)
         m = int(m)
 
         creation_dict ={
@@ -496,8 +529,6 @@ class FMLP_Metrics(Data):
         
         creation_dict ={
         'pred_threshold': [np.arange(0, 1, 1/m)],
-        #'net_benefit': [[(np.sum(y_i_test) - (threshold/(1-threshold))*np.sum(y_i_test^1))/len(y_i_test)
-        #                 for threshold in np.arange(0,1, 1/m)]],
         'net_benefit': [[np.mean(y_i_test == 1) - (np.mean(y_i_test == 1) / (1 - np.mean(y_i_test == 1))) * threshold
                          for threshold in np.arange(0, 1, 1/m)]],
         'name': [['Treat All' for _ in range(m)]]

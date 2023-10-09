@@ -45,7 +45,8 @@ class RawVisualiser:
     def plot_2d_scatter_multiple_datasets_go(self, 
                                              datasets, 
                                              feature1=0, 
-                                             feature2=1, 
+                                             feature2=1,
+                                             feature_map = {},
                                              title="2D Scatter Plot", 
                                              color_sequence=None,
                                              save = False):
@@ -107,6 +108,9 @@ class RawVisualiser:
                     )
                 ))
 
+        x_title = feature_map.get(feature1, f'Feature {feature1 + 1}')
+        y_title = feature_map.get(feature2, f'Feature {feature2 + 1}')
+
         fig.update_layout(
             title=title,
             xaxis_title=f'Feature {feature1}',
@@ -124,7 +128,8 @@ class RawVisualiser:
     def plot_2d_scatter_multiple_datasets_px(self, 
                                              datasets, 
                                              feature1=0, 
-                                             feature2=1, 
+                                             feature2=1,
+                                             feature_map = {},
                                              title="2D Scatter Plot",
                                              save = False):
         """
@@ -165,11 +170,14 @@ class RawVisualiser:
             marginal_y= "histogram",
         )
 
+        x_title = feature_map.get(feature1, f'Feature {feature1 + 1}')
+        y_title = feature_map.get(feature2, f'Feature {feature2 + 1}')
+
         fig.update_layout(
-            title=title,
-            xaxis_title=f'Feature {feature1}',
-            yaxis_title=f'Feature {feature2}',
-            legend=dict(x=0.85, y=1.0),
+            title = title,
+            xaxis_title = x_title,
+            yaxis_title = y_title,
+            legend = dict(x=0.85, y=1.0),
         )
 
         title = title.replace(" ", "_")
@@ -287,6 +295,91 @@ class RawVisualiser:
 
 
 
+class CLSFVisualiser:
+
+    def __init__(self, **params):
+        self.params = params
+
+
+    def confusion_scatterplot(self, 
+                              X_test,
+                              y_test,
+                              y_predicted, 
+                              feature1=0, 
+                              feature2=1,
+                              feature_map = {},
+                              title="2D Scatter Plot",
+                              save = False):
+        
+        y_test_1_mask = y_test == 1
+        y_pred_1_mask = y_predicted == 1
+
+        confusion_dict = {
+            'True Positives': X_test[(y_test_1_mask) & (y_pred_1_mask), :],
+            'False Negatives': X_test[(y_test_1_mask) & (~y_pred_1_mask), :],
+            'False Positives': X_test[(~y_test_1_mask) & (y_pred_1_mask), :],
+            'True Negatives': X_test[(~y_test_1_mask) & (~y_pred_1_mask), :],
+        }
+
+        df = pd.DataFrame()
+
+        for label, X_data in confusion_dict.items():
+            # Select the two features for plotting
+            x1 = X_data[:, feature1]
+            x2 = X_data[:, feature2]
+
+            group_df = pd.DataFrame({'Feature 1': x1, 'Feature 2': x2, 'Label': label})
+
+            df = pd.concat([df, group_df])
+        #print(df)
+
+        color_dict = {
+            'True Positives': 'green',
+            'False Negatives': 'red',
+            'False Positives': 'purple',
+            'True Negatives': px.colors.qualitative.Safe[0],
+        }
+
+        fig = px.scatter(
+            df,
+            x = 'Feature 1',
+            y = 'Feature 2',
+            color = 'Label',
+            color_discrete_map = color_dict,
+            marginal_x= "histogram", 
+            marginal_y= "histogram",
+        )
+
+        #fig.update_traces(marker=dict(color='red'))
+
+        x_title = feature_map.get(feature1, f'Feature {feature1 + 1}')
+        y_title = feature_map.get(feature2, f'Feature {feature2 + 1}')
+
+        fig.update_layout(
+            title = title,
+            xaxis_title = x_title,
+            yaxis_title = y_title,
+            legend = dict(x=0.85, y=1.0),
+        )
+
+        title = title.replace(" ", "_")
+        if save:
+            fig.write_image(f"Figures/{title}.png", 
+                            width=1920, 
+                            height=1080, 
+                            scale=3
+                            )
+
+        fig.show()
+
+
+
+   
+
+
+    
+
+
 
 
 if __name__ == "__main__":
@@ -294,51 +387,6 @@ if __name__ == "__main__":
     import scipy.stats as st
     from Data_Generator import Multi_Modal_Dist_Generator
     
-
-    """
-    Large Normal
-    -------------------------------------------------------------------------------------------------------------------------------------------
-    
-    n = 3
-    #set the parameter dictionary for the MV normal. sigma is the standard deviation
-    mu_c0_1 = np.zeros(shape = (n))
-    mu_c0_2 = 3 * np.ones(shape = (n))
-    mu_c1 = [2, -2, 2, -2, 2, -2, 2, -2, 2, -2]
-
-    sigma_c0_1 = np.ones(shape=(n,n)) + np.diag(np.ones(shape = (n)))
-    sigma_c0_2 = np.zeros(shape=(n,n)) + np.diag(np.ones(shape = (n)))
-    sigma_c1 = np.array([[3, 0, 1, 0, 1, 0, 0, 0, -1, -1],
-                         [0, 3, 1, 0, 0, 0, 1, 0, 0, -1],
-                         [1, 1, 3, 0, 1, 0, 0, 0, 1, 0],
-                         [0, 0, 0, 3, 0, 0, 1, 0, 0, 0],
-                         [1, 0, 1, 0, 3, 0, 0, 0, 1, 0],
-                         [0, 0, 0, 0, 0, 3, 1, 0, 0, 0],
-                         [0, 1, 0, 1, 0, 1, 3, 0, 1, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 3, 0, 1],
-                         [-1, 0, 1, 0, 1, 0, 1, 0, 3, 1],
-                         [-1, -1, 0, 0, 0, 0, 0, 1, 1, 3]])
-
-    #print(np.allclose(sigma_c1, sigma_c1.T))
-    #print(np.linalg.eigvals(sigma_c1))
-
-    mu_c1 = mu_c1[:n]
-    sigma_c1 = sigma_c1[ :n, :n]
-    print(sigma_c1)
-
-    distributions = [st.multivariate_normal]
-
-    #set the parameter dictionaries as a list of dictionaries with parameter dictionaries for classes individually.
-    dist_parameter_dicts = [{'modes_c0': 2,
-                            'modes_c1': 1,
-                            'mixing_weights_c0': [0.3, 0.7],
-                            'mixing_weights_c1': [0.3, 0.7],
-                            'params_c0': {'mean': [mu_c0_1, mu_c0_2], 'cov': [sigma_c0_1, sigma_c0_2]},
-                            'params_c1': {'mean': [mu_c1], 'cov': [sigma_c1]}
-                            },
-    ]
-
-    size = [9000, 1000]
-    """
 
     """
     Visualise

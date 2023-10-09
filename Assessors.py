@@ -171,17 +171,17 @@ class Assessor(Data):
         }
 
         metrics_dict = std_metrics_dict or default_metrics
-
+        std_metric_list = [(name, metr_func) for name, metr_func in metrics_dict.items()]
 
         self.data_dict['std_metrics_res'] = np.full(shape = self.exp_dim + (len(metrics_dict),), fill_value = np.nan)
         
-        metrics = FMLP_Metrics(metrics_dict)
+        metrics = FMLP_Metrics()
 
-        metrics.confusion_metrics()
+        metrics.confusion_metrics(std_metric_list)
 
         std_metrics_res = self.data_dict['std_metrics_res'].reshape(-1, len(metrics_dict))
 
-        results_df = pd.DataFrame(std_metrics_res, columns= [name for (name, metr_func) in metrics.std_metric_list])
+        results_df = pd.DataFrame(std_metrics_res, columns= [name for (name, metr_func) in std_metric_list])
 
         reference_list = [self.data_dict['assignment_dict'][(i, j, k)] 
                           for i in range(self.exp_dim[0]) 
@@ -265,6 +265,34 @@ class Assessor(Data):
 
         metrics.decision_curves(names_dict, data_ind = data_ind, m = m, save = save, title = title)
 
+
+    def create_confusion_plots(self, doc_dict, feature1 = 0, feature2 = 1, feature_map = {}, save = False):
+
+        doc_reference_dict = {
+            "n_features": 0,
+            "n_samples": 1,
+            "class_ratio": 2, 
+            "doc_string": 3,
+            "balancer": 4, 
+            "classifier": 5
+        }
+
+        doc_reference_dict = {key: index
+                              for key, index in doc_reference_dict.items()
+                              if doc_dict.get(key)
+                            }
+        
+        names_dict = {key: [*list(map(str, extract_table_info(assign_list[0]))), 
+                            assign_list[1][0], 
+                            assign_list[2][0]]
+                      for key, assign_list in self.data_dict['assignment_dict'].items()}
+
+        names_dict = {key: ', '.join([doc_list[i] for i in doc_reference_dict.values()]) 
+                      for key, doc_list in names_dict.items()}
+
+        metrics = FMLP_Metrics()
+
+        metrics.confusion_scatter(feature1, feature2, names_dict, feature_map = feature_map, save = save)
     
 
 
@@ -280,7 +308,7 @@ if __name__=="__main__":
     from Classifier import Classifier, DictIterClassifier
     from Data_Generator import Multi_Modal_Dist_Generator
     from Visualiser import RawVisualiser
-    from gen_parameters import mixed_3d_test_dict, mixed_test_dict
+    from gen_parameters import presentation_experiment_dict
     from sklearn.linear_model import LogisticRegression
     from sklearn.tree import DecisionTreeClassifier
     from sklearn.ensemble import RandomForestClassifier
@@ -289,9 +317,6 @@ if __name__=="__main__":
     from xgboost import XGBClassifier
     from lightgbm import LGBMClassifier
     
-
-    data_generator = Multi_Modal_Dist_Generator(**mixed_3d_test_dict)
-    X_train, X_test, y_train, y_test = data_generator.prepare_data(0.2)
 
     visualiser = RawVisualiser()
 
@@ -320,7 +345,7 @@ if __name__=="__main__":
     Assessor Testcase
     -------------------------------------------------------------------------------------------------------------------------------------------
     """
-    assessor = Assessor(0.2, [mixed_3d_test_dict, mixed_test_dict], balancing_methods, classifiers_dict)
+    assessor = Assessor(0.2, [presentation_experiment_dict], balancing_methods, classifiers_dict)
 
     assessor.generate()
     assessor.balance()

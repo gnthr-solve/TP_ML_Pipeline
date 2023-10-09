@@ -361,54 +361,6 @@ class FMLP_Generator(Data):
 
 if __name__ == "__main__":
     
-   
-
-    """
-    Multiple and Multimodal Distributions: Multinormal + Beta + Exponential Example
-    -------------------------------------------------------------------------------------------------------------------------------------------
-    """
-    #set the parameter dictionary for the MV normal. sigma is the standard deviation
-    mu_c0_1 = [0,0]
-    mu_c0_2 = [3,0]
-    mu_c1_1 = [3,3]
-    mu_c1_2 = [1,3]
-    sigma_c0_1 = np.array([[1,0],
-                           [0,3]])
-    sigma_c0_2 = np.array([[1,0],
-                           [0,1]])
-    sigma_c1_1 = np.array([[2,1],
-                           [1,1]])
-    sigma_c1_2 = np.array([[2,1],
-                           [1,2]])
-
-
-    distributions = [st.multivariate_normal, st.beta, st.expon]
-
-    #set the parameter dictionaries as a list of dictionaries with parameter dictionaries for classes individually.
-    dist_parameter_dicts = [{'modes_c0': 2,
-                            'modes_c1': 1,
-                            'mixing_weights_c0': [0.4, 0.6],
-                            'mixing_weights_c1': [0.3, 0.7],
-                            'params_c0': {'mean': [mu_c0_1, mu_c0_2], 'cov': [sigma_c0_1, sigma_c0_2]},
-                            'params_c1': {'mean': [mu_c1_1], 'cov': [sigma_c1_1]}
-                            },
-                            {'modes_c0': 1,
-                            'modes_c1': 1,
-                            #'mixing_weights_c0': [],
-                            'params_c0': {'a': [2,3], 'b': [4,5]},
-                            'params_c1': {'a': [1,2], 'b': [7,8]}
-                            },
-                            {'modes_c0': 1,
-                            'modes_c1': 1,
-                            #'mixing_weights_c0': [],
-                            'params_c0': {'loc': [0], 'scale': [1]},
-                            'params_c1': {'loc': [0], 'scale': [3]}
-                            }
-    ]
-
-    size = [2700, 300]
-
-
 
     """
     Test and Comparison Multi_Modal_Dist_Generator
@@ -489,54 +441,11 @@ if __name__ == "__main__":
 
 
     """
-    Multi_Modal_Dist_Generator - Data illustration
-    -------------------------------------------------------------------------------------------------------------------------------------------
-    
-    from Visualiser import RawVisualiser
-
-    visualiser = RawVisualiser()
-
-    dist_gen_spec = Multi_Modal_Dist_Generator(distributions, dist_parameter_dicts, size)
-
-
-    X_train, X_test, y_train, y_test = dist_gen_spec.prepare_data(0.2)
-    
-
-    datasets = [
-        (X_train, y_train, 'Train data'),
-    ]
-
-
-    #visualiser.plot_2d_scatter((data[0], data[1]),0, 1)
-    visualiser.plot_2d_scatter_multiple_datasets_px(datasets, 
-                                                    feature1 = 0, 
-                                                    feature2 = 2, 
-                                                    title = f'Bimodal Normal plus Beta Dist.',
-                                                    save = True
-                                                    )
-    
-    visualiser.plot_2d_scatter_multiple_datasets_px(datasets, 
-                                                    feature1 = 0, 
-                                                    feature2 = 1, 
-                                                    title = f'Normal Dist. Bimodal Majority, Unimodal Minority',
-                                                    save = True
-                                                    )
-    
-    '''
-    visualiser.plot_3d_scatter_multiple_datasets_px(datasets,
-                                                    feature1 = 0, 
-                                                    feature2 = 1,
-                                                    feature3 = 2,
-                                                    title = f'3d Scatter of generated Data')
-    '''
-    """
-
-    """
     Bimodal Multinormal Experiment for Report - Data illustration
     -------------------------------------------------------------------------------------------------------------------------------------------
-    """
+    
     from Visualiser import RawVisualiser
-    from gen_parameters import experiment_dict, alt_experiment_dict
+    from gen_parameters import alt_experiment_dict
 
     visualiser = RawVisualiser()
 
@@ -556,14 +465,66 @@ if __name__ == "__main__":
                                                     feature1 = 0, 
                                                     feature2 = 14, 
                                                     title = f'Bimodal Normal vs Unimodal Scatterplot',
-                                                    save = True
+                                                    save = False
                                                     )
     
     visualiser.plot_2d_scatter_multiple_datasets_px(datasets, 
                                                     feature1 = 1, 
                                                     feature2 = 2, 
                                                     title = f'Bimodal Normal vs Unimodal Scatterplot',
-                                                    save = True
+                                                    save = False
+                                                    )
+    
+    '''
+    visualiser.plot_3d_scatter_multiple_datasets_px(datasets,
+                                                    feature1 = 0, 
+                                                    feature2 = 1,
+                                                    feature3 = 2,
+                                                    title = f'3d Scatter of generated Data')
+    '''
+    """
+
+
+    """
+    Presentation - Data illustration
+    -------------------------------------------------------------------------------------------------------------------------------------------
+    """
+    from Visualiser import RawVisualiser
+    from gen_parameters import presentation_experiment_dict
+
+    visualiser = RawVisualiser()
+
+    dist_gen_spec = Multi_Modal_Dist_Generator(**presentation_experiment_dict)
+
+
+    X_train, X_test, y_train, y_test = dist_gen_spec.prepare_data(0.2)
+    
+
+    datasets = [
+        (X_train, y_train, 'Train data'),
+    ]
+
+
+    #visualiser.plot_2d_scatter((data[0], data[1]),0, 1)
+    visualiser.plot_2d_scatter_multiple_datasets_px(datasets, 
+                                                    feature1 = 0, 
+                                                    feature2 = 1, 
+                                                    title = f'Bimodal Normal vs Unimodal Scatterplot',
+                                                    save = False
+                                                    )
+    
+    visualiser.plot_2d_scatter_multiple_datasets_px(datasets, 
+                                                    feature1 = 2, 
+                                                    feature2 = 3, 
+                                                    title = f'Beta vs Poisson',
+                                                    save = False
+                                                    )
+    
+    visualiser.plot_2d_scatter_multiple_datasets_px(datasets, 
+                                                    feature1 = 2, 
+                                                    feature2 = 4, 
+                                                    title = f'Beta vs Gamma',
+                                                    save = False
                                                     )
     
     '''

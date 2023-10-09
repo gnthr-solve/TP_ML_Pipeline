@@ -7,6 +7,7 @@ from scipy.interpolate import splrep, BSpline, CubicSpline, interp1d
 #from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
 from helper_tools import extract_table_info, calculate_no_samples
+from Visualiser import CLSFVisualiser
 from itertools import product
 import time
 
@@ -267,6 +268,34 @@ class Assessor(Data):
         metrics.decision_curves(names_dict, data_ind = data_ind, m = m, save = save, title = title)
 
 
+    @timing_decorator
+    def create_confusion_plots(self, doc_dict, feature1 = 0, feature2 = 1, feature_map = {}, save = False):
+
+        doc_reference_dict = {
+            "n_features": 0,
+            "n_samples": 1,
+            "class_ratio": 2, 
+            "doc_string": 3,
+            "balancer": 4, 
+            "classifier": 5
+        }
+
+        doc_reference_dict = {key: index
+                              for key, index in doc_reference_dict.items()
+                              if doc_dict.get(key)
+                            }
+        
+        names_dict = {key: [*list(map(str, extract_table_info(assign_list[0]))), 
+                            assign_list[1][0], 
+                            assign_list[2][0]]
+                      for key, assign_list in self.data_dict['assignment_dict'].items()}
+
+        names_dict = {key: ', '.join([doc_list[i] for i in doc_reference_dict.values()]) 
+                      for key, doc_list in names_dict.items()}
+
+        metrics = Metrics()
+
+        metrics.confusion_scatter(feature1, feature2, names_dict, feature_map = feature_map, save = save)
 
 
 
@@ -521,10 +550,6 @@ class DataClassifier(Data):
 
     
 
-
-
-
-
 class Metrics(Data):
 
     #def __init__(self):
@@ -549,9 +574,38 @@ class Metrics(Data):
 
 
 
-    def net_benefit(self, harm_to_benefit):
+    def confusion_scatter(self, feature1, feature2, names_dict, feature_map, save = False):
 
-        self.NB = self.TP - harm_to_benefit * self.FP
+        clsf_visualiser = CLSFVisualiser()
+
+        X_test = self.data_dict['org_X_test']
+        y_test = self.data_dict['org_y_test']
+        y_pred = self.data_dict['clsf_predictions_y']
+
+        for (i,j,k) in self.data_dict['assignment_dict']:
+
+            y_i_test = y_test[i]
+            y_i_test = y_i_test[~np.isnan(y_i_test)]
+
+            X_i_test = X_test[i]
+            # Drop rows with NaN values
+            X_i_test = X_i_test[~np.isnan(X_i_test).all(axis = 1)]
+            # Drop columns with NaN values
+            X_i_test = X_i_test[: , ~np.isnan(X_i_test).all(axis = 0)]
+
+            y_clsf_pred = y_pred[i, j, k]
+            y_clsf_pred = y_clsf_pred[~np.isnan(y_clsf_pred)]
+
+
+            clsf_visualiser.confusion_scatterplot(X_i_test,
+                                                  y_i_test,
+                                                  y_clsf_pred,
+                                                  feature1 = feature1, 
+                                                  feature2 = feature2,
+                                                  feature_map= feature_map,
+                                                  title = f'{names_dict[(i,j,k)]} Confusion Scatterplot',
+                                                  save = save
+                                                )
 
 
 
@@ -806,8 +860,6 @@ if __name__=="__main__":
     import pandas as pd
     from loguru import logger
     from imblearn.over_sampling import ADASYN,RandomOverSampler,KMeansSMOTE,SMOTE,BorderlineSMOTE,SVMSMOTE,SMOTENC, RandomOverSampler
-    from Visualiser import RawVisualiser
-    from gen_parameters import mixed_3d_test_dict, alt_experiment_dict
     from sklearn.linear_model import LogisticRegression
     from sklearn.tree import DecisionTreeClassifier
     from sklearn.ensemble import RandomForestClassifier
@@ -816,35 +868,17 @@ if __name__=="__main__":
     from xgboost import XGBClassifier
     from lightgbm import LGBMClassifier
 
-    balancing_methods = {
-    "Unbalanced": None,
-    "ADASYN": ADASYN,
-    "RandomOverSampler": RandomOverSampler,
-    #"KMeansSMOTE": KMeansSMOTE,
-    "SMOTE": SMOTE,
-    "BorderlineSMOTE": BorderlineSMOTE,
-    "SVMSMOTE": SVMSMOTE,
-    #"SMOTENC": SMOTENC,
-    }
+    from Visualiser import RawVisualiser, CLSFVisualiser
+    from gen_parameters import presentation_experiment_dict, alt_experiment_dict
 
-    classifiers_dict = {
-    "Logistic Regression": LogisticRegression,
-    "Decision Tree": DecisionTreeClassifier,
-    "Random Forest": RandomForestClassifier,
-    #"SVC": SVC,
-    #"Naive Bayes": GaussianNB,
-    "XGboost": XGBClassifier,
-    "Lightgbm": LGBMClassifier
-    }
-
-    visualiser = RawVisualiser()
-
+    raw_visualiser = RawVisualiser()
+    clsf_visualiser = CLSFVisualiser()
 
 
     """
-    Alternative Bimodal Multinormal Experiment for Report
+    Bimodal Multinormal Experiment for Report
     -------------------------------------------------------------------------------------------------------------------------------------------
-    """
+    
     balancing_methods = {
     "Unbalanced": None,
     "ADASYN": ADASYN,
@@ -866,7 +900,7 @@ if __name__=="__main__":
     "Lightgbm": LGBMClassifier
     }
 
-    assessor = Assessor(0.2, [mixed_3d_test_dict], balancing_methods, classifiers_dict)
+    assessor = Assessor(0.2, [alt_experiment_dict], balancing_methods, classifiers_dict)
     
 
     assessor.generate()
@@ -901,10 +935,11 @@ if __name__=="__main__":
     
     #assessor.create_calibration_curves(doc_dict, spline = True, save = False, title = f'All Calibration Curves for 100k samples')
     assessor.create_decision_curves(doc_dict = doc_dict, m=20, save = False, title = f'All Decision Curves for 100k samples')
-    
+    """
+
 
     """
-    Alternative Bimodal Multinormal Experiment Calibration Curves
+    Report: Bimodal Multinormal Experiment Calibration Curves
     -------------------------------------------------------------------------------------------------------------------------------------------
     
     
@@ -959,3 +994,67 @@ if __name__=="__main__":
         
         #assessor.create_decision_curves(doc_dict = doc_dict, m = m, save = True, title = f'Decision Curves for {name}')
     """
+
+
+    """
+    Presentation Experiment
+    -------------------------------------------------------------------------------------------------------------------------------------------
+    """
+    balancing_methods = {
+    "Unbalanced": None,
+    "ADASYN": ADASYN,
+    "RandomOverSampler": RandomOverSampler,
+    "KMeansSMOTE": KMeansSMOTE,
+    "SMOTE": SMOTE,
+    "BorderlineSMOTE": BorderlineSMOTE,
+    "SVMSMOTE": SVMSMOTE,
+    #"SMOTENC": SMOTENC,
+    }
+
+    classifiers_dict = {
+    "Logistic Regression": LogisticRegression,
+    "Decision Tree": DecisionTreeClassifier,
+    "Random Forest": RandomForestClassifier,
+    #"SVC": SVC,
+    #"Naive Bayes": GaussianNB,
+    "XGboost": XGBClassifier,
+    "Lightgbm": LGBMClassifier
+    }
+
+    assessor = Assessor(0.2, [presentation_experiment_dict], balancing_methods, classifiers_dict)
+    
+
+    assessor.generate()
+    assessor.balance()
+    assessor.clsf_pred()
+
+    #calc_std_metrics() test
+    #-------------------------------------------------------------------------------------------------------------------------------------------
+    results_df = pd.DataFrame()
+    new_results_df = assessor.calc_std_metrics()
+
+    #print(new_results_df)
+    results_df = pd.concat([results_df, new_results_df],
+                            ignore_index=True,
+                            axis = 0).reset_index(drop=True)
+    
+    print(results_df)
+    #print(results_df[results_df['classifier'] == 'Lightgbm'])
+    #results_df.to_csv('Experiments/bimodal_maj_lower_dist.csv')
+
+
+    #All calibration curves
+    #-------------------------------------------------------------------------------------------------------------------------------------------
+    doc_dict = {
+            "n_features": False,
+            "n_samples": False,
+            "class_ratio": False, 
+            "doc_string": False,
+            "balancer": True, 
+            "classifier": True
+        }
+    
+    assessor.create_confusion_plots(doc_dict, feature1=0, feature2=2)
+    assessor.create_calibration_curves(doc_dict, spline = True, save = False, title = f'All Calibration Curves')
+    assessor.create_decision_curves(doc_dict = doc_dict, m=20, save = False, title = f'All Decision Curves')
+    
