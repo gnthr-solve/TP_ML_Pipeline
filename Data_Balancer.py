@@ -120,7 +120,7 @@ if __name__=="__main__":
     from imblearn.over_sampling import ADASYN,RandomOverSampler,KMeansSMOTE,SMOTE,BorderlineSMOTE,SVMSMOTE,SMOTENC, RandomOverSampler
     from Data_Generator import Multi_Modal_Dist_Generator
     from Visualiser import RawVisualiser
-    from gen_parameters import mixed_3d_test_dict, alt_experiment_dict
+    from gen_parameters import presentation_experiment_dict, alt_experiment_dict
 
 
     balancing_methods = {
@@ -136,7 +136,7 @@ if __name__=="__main__":
 
     visualiser = RawVisualiser()
 
-    data_generator = Multi_Modal_Dist_Generator(**alt_experiment_dict)
+    data_generator = Multi_Modal_Dist_Generator(**presentation_experiment_dict)
     X_train, X_test, y_train, y_test = data_generator.prepare_data(0.2)
 
 
@@ -176,7 +176,7 @@ if __name__=="__main__":
     """
     DictIterDataBalancer Test Case
     -------------------------------------------------------------------------------------------------------------------------------------------
-    """
+    
     
     iter_data_balancer = DictIterDataBalancer(balancers_dict = balancing_methods)
     
@@ -214,11 +214,61 @@ if __name__=="__main__":
                                                         title = f'Scatter of {name} with data from bimodal experiment',
                                                         save = True)
         
-        """
+        '''
         visualiser.plot_3d_scatter_multiple_datasets_px(datasets,
                                                         feature1 = 0, 
                                                         feature2 = 1,
                                                         feature3 = 2,
                                                         title = f'3d Scatter of {name}-balanced Data')
-        """
+        '''
+    """
+
+
+    """
+    DictIterDataBalancer Presentation Balancer Plots
+    -------------------------------------------------------------------------------------------------------------------------------------------
+    """
     
+    iter_data_balancer = DictIterDataBalancer(balancers_dict = balancing_methods)
+    
+    balanced_data = iter_data_balancer.balance_data(X_train, y_train)
+
+    feature1 = 2
+    feature2 = 4
+
+    feature_map = {
+        0: 'Normal Feature',
+        1: 'Normal Feature',
+        2: 'Beta Feature',
+        3: 'Poisson Feature',
+        4: 'Gamma Feature',
+    }
+
+    for name, X_bal, y_bal in balanced_data:
+
+        print(f'{name}-balanced no 0: \n', np.sum(y_bal == 0), '\n',
+              f'{name}-balanced no 1: \n', np.sum(y_bal == 1), '\n',
+              f'{name}-balanced size: \n', len(y_bal), '\n'
+              )
+        
+        common_data = np.isin(X_bal, X_train)
+        row_mask = np.all(common_data, axis = 1)
+        
+        only_balance_X = X_bal[~row_mask]
+        only_balance_y = y_bal[~row_mask]
+
+        datasets = [
+            (X_train, y_train, 'Train'),
+            (only_balance_X, only_balance_y, 'Data Added by Balancer')
+        ]
+
+
+        #visualiser.plot_2d_scatter((data[0], data[1]),0, 1)
+        visualiser.plot_2d_scatter_multiple_datasets_px(datasets, 
+                                                        feature1 = feature1, 
+                                                        feature2 = feature2,
+                                                        feature_map = feature_map,
+                                                        title = f'Scatter of {name}-balanced data',
+                                                        save = False)
+        
+        
