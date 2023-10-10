@@ -335,6 +335,7 @@ class FMLP_Metrics(Data):
             self.data_dict['std_metrics_res'][i, j, k, :] = evaluation
 
 
+
     def confusion_scatter(self, feature1, feature2, names_dict, feature_map, save = False):
 
         clsf_visualiser = CLSFVisualiser()
@@ -369,6 +370,42 @@ class FMLP_Metrics(Data):
                                                 )
 
 
+
+    def pred_proba_scatter(self, feature1, feature2, names_dict, feature_map, save = False):
+
+        clsf_visualiser = CLSFVisualiser()
+
+        X_test = self.data_dict['org_X_test']
+        pred_probabilities = self.data_dict['clsf_predictions_proba']
+        class_orders = self.data_dict['classes_order']
+
+        for (i,j,k) in self.data_dict['assignment_dict']:
+
+            corr_classes = class_orders[i, j, k]
+
+            X_i_test = X_test[i]
+            # Drop rows with NaN values
+            X_i_test = X_i_test[~np.isnan(X_i_test).all(axis = 1)]
+            # Drop columns with NaN values
+            X_i_test = X_i_test[: , ~np.isnan(X_i_test).all(axis = 0)]
+
+            clsf_pred_proba = pred_probabilities[i, j, k]
+            # Drop rows with NaN values
+            clsf_pred_proba = clsf_pred_proba[~np.isnan(clsf_pred_proba).all(axis = 1)]
+
+
+            clsf_visualiser.pred_proba_scatterplot(X_i_test,
+                                                   clsf_pred_proba,
+                                                   corr_classes,
+                                                   feature1 = feature1, 
+                                                   feature2 = feature2,
+                                                   feature_map= feature_map,
+                                                   title = f'{names_dict[(i,j,k)]} Pred. Probability Scatterplot',
+                                                   save = save
+                                                )
+
+
+
     def calibration_curves(self, names_dict, save = False, title = f'Calibration Curves'):
         predicted_proba_raw = self.data_dict['clsf_predictions_proba']
         class_orders = self.data_dict['classes_order']
@@ -393,8 +430,6 @@ class FMLP_Metrics(Data):
 
             # Drop rows with NaN values
             pred_probabilities = pred_probabilities[~np.isnan(pred_probabilities).all(axis = 1)]
-            # Drop columns with NaN values
-            pred_probabilities = pred_probabilities[: , ~np.isnan(pred_probabilities).all(axis = 0)]
 
             pred_proba = pred_probabilities[:, np.where(corr_classes == 1)[0]].flatten()
             
@@ -465,8 +500,6 @@ class FMLP_Metrics(Data):
             
             # Drop rows with NaN values
             pred_probabilities = pred_probabilities[~np.isnan(pred_probabilities).all(axis = 1)]
-            # Drop columns with NaN values
-            pred_probabilities = pred_probabilities[: , ~np.isnan(pred_probabilities).all(axis = 0)]
             
             pred_proba = pred_probabilities[:, np.where(corr_classes == 1)[0]].flatten()
             
@@ -543,8 +576,6 @@ class FMLP_Metrics(Data):
 
             # Drop rows with NaN values
             pred_probabilities = pred_probabilities[~np.isnan(pred_probabilities).all(axis = 1)]
-            # Drop columns with NaN values
-            pred_probabilities = pred_probabilities[: , ~np.isnan(pred_probabilities).all(axis = 0)]
 
             pred_proba = pred_probabilities[:, np.where(corr_classes == 1)[0]].flatten()
 

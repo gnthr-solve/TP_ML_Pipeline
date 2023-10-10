@@ -183,7 +183,8 @@ for name, bal in balancing_methods.items():
         4: 'Gamma Feature',
     }
     
-    assessor.create_confusion_plots(doc_dict, feature1=0, feature2=4, save = False)
+    assessor.create_confusion_plots(doc_dict, feature1=0, feature2=4, feature_map = feature_map, save = False)
+    assessor.create_pred_proba_plots(doc_dict, feature1=0, feature2=2, feature_map = feature_map, save = False)
     assessor.create_calibration_curves(doc_dict, spline = True, save = False, title = f'Calibration Curves for {name}')
     assessor.create_decision_curves(doc_dict = doc_dict, m = 20, save = False, title = f'Decision Curves for {name}')
 

@@ -107,7 +107,6 @@ class Assessor(Data):
             generator.prepare_data(self.test_size)
 
 
-
     def balance(self, bal_params_dicts = {}):
 
         a, b, c = self.exp_dim
@@ -142,7 +141,6 @@ class Assessor(Data):
         data_balancer.balance_data()
         
 
-
     def clsf_pred(self):
 
         a, n = np.shape(self.data_dict['org_y_test'])
@@ -157,7 +155,6 @@ class Assessor(Data):
         data_classifier.fit()
 
         data_classifier.predict()
-
 
 
     def calc_std_metrics(self, std_metrics_dict = {}):
@@ -202,7 +199,6 @@ class Assessor(Data):
         return results_df
     
 
-
     def create_calibration_curves(self, doc_dict, spline = False, save = False, title = f'Calibration Curves'):
 
         doc_reference_dict = {
@@ -235,8 +231,7 @@ class Assessor(Data):
         else:
             metrics.calibration_curves(names_dict, save = save, title = title)
 
-    
-    
+        
     def create_decision_curves(self, doc_dict, data_ind = 0, m = 10, save = False, title = f'Decision Curves'):
 
         doc_reference_dict = {
@@ -295,6 +290,33 @@ class Assessor(Data):
         metrics.confusion_scatter(feature1, feature2, names_dict, feature_map = feature_map, save = save)
     
 
+    def create_pred_proba_plots(self, doc_dict, feature1 = 0, feature2 = 1, feature_map = {}, save = False):
+
+        doc_reference_dict = {
+            "n_features": 0,
+            "n_samples": 1,
+            "class_ratio": 2, 
+            "doc_string": 3,
+            "balancer": 4, 
+            "classifier": 5
+        }
+
+        doc_reference_dict = {key: index
+                              for key, index in doc_reference_dict.items()
+                              if doc_dict.get(key)
+                            }
+        
+        names_dict = {key: [*list(map(str, extract_table_info(assign_list[0]))), 
+                            assign_list[1][0], 
+                            assign_list[2][0]]
+                      for key, assign_list in self.data_dict['assignment_dict'].items()}
+
+        names_dict = {key: ', '.join([doc_list[i] for i in doc_reference_dict.values()]) 
+                      for key, doc_list in names_dict.items()}
+
+        metrics = FMLP_Metrics()
+
+        metrics.pred_proba_scatter(feature1, feature2, names_dict, feature_map = feature_map, save = save)
 
 
 

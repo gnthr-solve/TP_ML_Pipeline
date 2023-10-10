@@ -298,6 +298,35 @@ class Assessor(Data):
         metrics.confusion_scatter(feature1, feature2, names_dict, feature_map = feature_map, save = save)
 
 
+    @timing_decorator
+    def create_pred_proba_plots(self, doc_dict, feature1 = 0, feature2 = 1, feature_map = {}, save = False):
+
+        doc_reference_dict = {
+            "n_features": 0,
+            "n_samples": 1,
+            "class_ratio": 2, 
+            "doc_string": 3,
+            "balancer": 4, 
+            "classifier": 5
+        }
+
+        doc_reference_dict = {key: index
+                              for key, index in doc_reference_dict.items()
+                              if doc_dict.get(key)
+                            }
+        
+        names_dict = {key: [*list(map(str, extract_table_info(assign_list[0]))), 
+                            assign_list[1][0], 
+                            assign_list[2][0]]
+                      for key, assign_list in self.data_dict['assignment_dict'].items()}
+
+        names_dict = {key: ', '.join([doc_list[i] for i in doc_reference_dict.values()]) 
+                      for key, doc_list in names_dict.items()}
+
+        metrics = Metrics()
+
+        metrics.pred_proba_scatter(feature1, feature2, names_dict, feature_map = feature_map, save = save)
+
 
 
 class Generator(Data):
@@ -609,6 +638,41 @@ class Metrics(Data):
 
 
 
+    def pred_proba_scatter(self, feature1, feature2, names_dict, feature_map, save = False):
+
+        clsf_visualiser = CLSFVisualiser()
+
+        X_test = self.data_dict['org_X_test']
+        pred_probabilities = self.data_dict['clsf_predictions_proba']
+        class_orders = self.data_dict['classes_order']
+
+        for (i,j,k) in self.data_dict['assignment_dict']:
+
+            corr_classes = class_orders[i, j, k]
+
+            X_i_test = X_test[i]
+            # Drop rows with NaN values
+            X_i_test = X_i_test[~np.isnan(X_i_test).all(axis = 1)]
+            # Drop columns with NaN values
+            X_i_test = X_i_test[: , ~np.isnan(X_i_test).all(axis = 0)]
+
+            clsf_pred_proba = pred_probabilities[i, j, k]
+            # Drop rows with NaN values
+            clsf_pred_proba = clsf_pred_proba[~np.isnan(clsf_pred_proba).all(axis = 1)]
+
+
+            clsf_visualiser.pred_proba_scatterplot(X_i_test,
+                                                   clsf_pred_proba,
+                                                   corr_classes,
+                                                   feature1 = feature1, 
+                                                   feature2 = feature2,
+                                                   feature_map= feature_map,
+                                                   title = f'{names_dict[(i,j,k)]} Confusion Scatterplot',
+                                                   save = save
+                                                )
+
+
+
     def calibration_curves(self, names_dict, save = False, title = f'Calibration Curves'):
         predicted_proba_raw = self.data_dict['clsf_predictions_proba']
         class_orders = self.data_dict['classes_order']
@@ -635,8 +699,6 @@ class Metrics(Data):
 
             # Drop rows with NaN values
             pred_probabilities = pred_probabilities[~np.isnan(pred_probabilities).all(axis = 1)]
-            # Drop columns with NaN values
-            pred_probabilities = pred_probabilities[: , ~np.isnan(pred_probabilities).all(axis = 0)]
 
             pred_proba = pred_probabilities[:, np.where(corr_classes == 1)[0]].flatten()
             
@@ -688,7 +750,7 @@ class Metrics(Data):
 
         class_ratios = np.nansum(y_test, axis=1) / np.sum(~np.isnan(y_test), axis=1)
         m = 1 / min(class_ratios)
-        print(m)
+        #print(m)
         m = int(m)
 
         creation_dict ={
@@ -702,18 +764,16 @@ class Metrics(Data):
             
             y_i_test = y_test[i].copy()
             y_i_test = y_i_test[~np.isnan(y_i_test)]
-            print(f'Length of y_{i}_test: ', len(y_i_test))
-            print(f'Number of positive in y_{i}_test: ', np.sum(y_i_test))
+            #print(f'Length of y_{i}_test: ', len(y_i_test))
+            #print(f'Number of positive in y_{i}_test: ', np.sum(y_i_test))
 
             pred_probabilities = predicted_proba_raw[i, j, k]
             
             # Drop rows with NaN values
             pred_probabilities = pred_probabilities[~np.isnan(pred_probabilities).all(axis = 1)]
-            # Drop columns with NaN values
-            pred_probabilities = pred_probabilities[: , ~np.isnan(pred_probabilities).all(axis = 0)]
             
             pred_proba = pred_probabilities[:, np.where(corr_classes == 1)[0]].flatten()
-            print(len(y_i_test) == len(pred_proba))
+            #print(len(y_i_test) == len(pred_proba))
             
             sorted_indices = np.argsort(pred_proba)
             sorted_probabilities = pred_proba[sorted_indices]
@@ -723,11 +783,11 @@ class Metrics(Data):
             binned_y_test = np.array_split(sorted_y_test, m)
 
             mean_predicted_proba = [bin.sum()/len(bin) for bin in binned_probabilities]
-            print(names_dict[(i,j,k)], mean_predicted_proba)
-            print(f'Binned y_{i}_test: ', [bin.sum()/len(bin) for bin in binned_y_test])
-            print(f'The binned y_{i}_test means: ', sum([bin.sum()/len(bin) for bin in binned_y_test]))
-            print(f'The binned y_{i}_test sums ', [bin.sum() for bin in binned_y_test])
-            print(f'The bin lengths: ', [len(bin) for bin in binned_y_test])
+            #print(names_dict[(i,j,k)], mean_predicted_proba)
+            #print(f'Binned y_{i}_test: ', [bin.sum()/len(bin) for bin in binned_y_test])
+            #print(f'The binned y_{i}_test means: ', sum([bin.sum()/len(bin) for bin in binned_y_test]))
+            #print(f'The binned y_{i}_test sums ', [bin.sum() for bin in binned_y_test])
+            #print(f'The bin lengths: ', [len(bin) for bin in binned_y_test])
             spline = interp1d(
                 x = mean_predicted_proba, 
                 y = [bin.sum()/len(bin) for bin in binned_y_test],
@@ -795,8 +855,6 @@ class Metrics(Data):
 
             # Drop rows with NaN values
             pred_probabilities = pred_probabilities[~np.isnan(pred_probabilities).all(axis = 1)]
-            # Drop columns with NaN values
-            pred_probabilities = pred_probabilities[: , ~np.isnan(pred_probabilities).all(axis = 0)]
 
             pred_proba = pred_probabilities[:, np.where(corr_classes == 1)[0]].flatten()
 
@@ -1054,7 +1112,16 @@ if __name__=="__main__":
             "classifier": True
         }
     
-    assessor.create_confusion_plots(doc_dict, feature1=0, feature2=2)
+    feature_map = {
+        0: 'Normal Feature',
+        1: 'Normal Feature',
+        2: 'Beta Feature',
+        3: 'Poisson Feature',
+        4: 'Gamma Feature',
+    }
+
+    #assessor.create_confusion_plots(doc_dict, feature1=0, feature2=2, feature_map = feature_map, save = False)
+    assessor.create_pred_proba_plots(doc_dict, feature1=0, feature2=2, feature_map = feature_map, save = False)
     assessor.create_calibration_curves(doc_dict, spline = True, save = False, title = f'All Calibration Curves')
     assessor.create_decision_curves(doc_dict = doc_dict, m=20, save = False, title = f'All Decision Curves')
     

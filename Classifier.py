@@ -268,7 +268,7 @@ if __name__=="__main__":
 
     
     """
-    DictIterClassifier used to test CLSFVisualiser Plots
+    DictIterClassifier for CLSFVisualiser Plots of Presentation Experiments
     -------------------------------------------------------------------------------------------------------------------------------------------
     """
     
@@ -283,11 +283,20 @@ if __name__=="__main__":
     feature1 = 2
     feature2 = 4
 
+    feature_map = {
+        0: 'Normal Feature',
+        1: 'Normal Feature',
+        2: 'Beta Feature',
+        3: 'Poisson Feature',
+        4: 'Gamma Feature',
+    }
+
     for predictions_dict in predictions_dict_list:
 
         name = predictions_dict['name']
         predictions = predictions_dict['predicted_y']
         classes = predictions_dict['classes']
+        #print(classes)
         predicted_probabilities = predictions_dict['predicted_proba']
 
         clsf_visualiser.confusion_scatterplot(X_test,
@@ -295,7 +304,7 @@ if __name__=="__main__":
                                               predictions,
                                               feature1 = feature1, 
                                               feature2 = feature2,
-                                              #feature_map= feature_map,
+                                              feature_map= feature_map,
                                               title = f'{name} Confusion Scatter',
                                               save = False
                                         )
@@ -305,7 +314,7 @@ if __name__=="__main__":
                                                classes,
                                                feature1 = feature1, 
                                                feature2 = feature2,
-                                               #feature_map= feature_map,
+                                               feature_map= feature_map,
                                                title = f'Scatter of {name} Probability Predictions',
                                                save = False
                                             )
