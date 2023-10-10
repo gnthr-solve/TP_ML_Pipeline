@@ -95,8 +95,6 @@ for distance in class_distance_list[6:]:
 """
 Presentation Experiment
 -------------------------------------------------------------------------------------------------------------------------------------------
-"""
-
 
 assessor = Assessor(0.2, [presentation_experiment_dict], balancing_methods, classifiers_dict)
 
@@ -126,12 +124,13 @@ assessor.create_confusion_plots(doc_dict, feature1=0, feature2=2)
 assessor.create_calibration_curves(doc_dict, spline = True, save = False, title = f'All Calibration Curves')
 assessor.create_decision_curves(doc_dict = doc_dict, m=20, save = False, title = f'All Decision Curves')
 
+"""
 
 
 """
 Presentation Experiment - Balancer Specific Calibration Curves
 -------------------------------------------------------------------------------------------------------------------------------------------
-
+"""
 
 balancing_methods = {
 "Unbalanced": None,
@@ -176,8 +175,15 @@ for name, bal in balancing_methods.items():
             "classifier": True
         }
     
-    assessor.create_confusion_plots(doc_dict, feature1=0, feature2=2)
+    feature_map = {
+        0: 'Normal Feature',
+        1: 'Normal Feature',
+        2: 'Beta Feature',
+        3: 'Poisson Feature',
+        4: 'Gamma Feature',
+    }
+    
+    assessor.create_confusion_plots(doc_dict, feature1=0, feature2=4, save = False)
     assessor.create_calibration_curves(doc_dict, spline = True, save = False, title = f'Calibration Curves for {name}')
     assessor.create_decision_curves(doc_dict = doc_dict, m = 20, save = False, title = f'Decision Curves for {name}')
 
-"""

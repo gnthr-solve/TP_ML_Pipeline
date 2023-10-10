@@ -308,17 +308,17 @@ class CLSFVisualiser:
                               feature1=0, 
                               feature2=1,
                               feature_map = {},
-                              title="2D Scatter Plot",
+                              title="Confusion Scatterplot",
                               save = False):
         
         y_test_1_mask = y_test == 1
         y_pred_1_mask = y_predicted == 1
 
         confusion_dict = {
+            'True Negatives': X_test[(~y_test_1_mask) & (~y_pred_1_mask), :],
+            'False Positives': X_test[(~y_test_1_mask) & (y_pred_1_mask), :],
             'True Positives': X_test[(y_test_1_mask) & (y_pred_1_mask), :],
             'False Negatives': X_test[(y_test_1_mask) & (~y_pred_1_mask), :],
-            'False Positives': X_test[(~y_test_1_mask) & (y_pred_1_mask), :],
-            'True Negatives': X_test[(~y_test_1_mask) & (~y_pred_1_mask), :],
         }
 
         df = pd.DataFrame()
@@ -351,6 +351,59 @@ class CLSFVisualiser:
         )
 
         #fig.update_traces(marker=dict(color='red'))
+
+        x_title = feature_map.get(feature1, f'Feature {feature1 + 1}')
+        y_title = feature_map.get(feature2, f'Feature {feature2 + 1}')
+
+        fig.update_layout(
+            title = title,
+            xaxis_title = x_title,
+            yaxis_title = y_title,
+            legend = dict(x=0.85, y=1.0),
+        )
+
+        title = title.replace(" ", "_")
+        if save:
+            fig.write_image(f"Figures/{title}.png", 
+                            width=1920, 
+                            height=1080, 
+                            scale=3
+                            )
+
+        fig.show()
+
+
+    
+    def pred_proba_scatterplot(self, 
+                               X_test,
+                               predicted_proba,
+                               corr_classes, 
+                               feature1=0, 
+                               feature2=1,
+                               feature_map = {},
+                               title="Probability Scatterplot",
+                               save = False):
+        
+        pred_proba = predicted_proba[:, np.where(corr_classes == 1)[0]].flatten()
+
+        df = pd.DataFrame()
+
+        # Select the two features for plotting
+        x1 = X_test[:, feature1]
+        x2 = X_test[:, feature2]
+
+        df = pd.DataFrame({'Feature 1': x1, 'Feature 2': x2, 'C1 Probability': pred_proba})
+
+        fig = px.scatter(
+            df,
+            x = 'Feature 1',
+            y = 'Feature 2',
+            color = 'C1 Probability',
+            #color_continuous_scale = 'Bluered',
+            #color_continuous_scale=["blue", "green", "red"],
+            color_continuous_scale = 'OrRd',
+            #color_continuous_scale = 'Plasma_r',
+        )
 
         x_title = feature_map.get(feature1, f'Feature {feature1 + 1}')
         y_title = feature_map.get(feature2, f'Feature {feature2 + 1}')

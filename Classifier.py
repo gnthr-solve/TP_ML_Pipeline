@@ -154,8 +154,8 @@ if __name__=="__main__":
     from loguru import logger
     #from imblearn.over_sampling import ADASYN,RandomOverSampler,KMeansSMOTE,SMOTE,BorderlineSMOTE,SVMSMOTE,SMOTENC, RandomOverSampler
     from Data_Generator import Multi_Modal_Dist_Generator
-    from Visualiser import RawVisualiser
-    from gen_parameters import mixed_3d_test_dict
+    from Visualiser import RawVisualiser, CLSFVisualiser
+    from gen_parameters import presentation_experiment_dict
     from sklearn.linear_model import LogisticRegression
     from sklearn.tree import DecisionTreeClassifier
     from sklearn.ensemble import RandomForestClassifier
@@ -165,10 +165,11 @@ if __name__=="__main__":
     #from lightgbm import LGBMClassifier
 
 
-    data_generator = Multi_Modal_Dist_Generator(**mixed_3d_test_dict)
+    data_generator = Multi_Modal_Dist_Generator(**presentation_experiment_dict)
     X_train, X_test, y_train, y_test = data_generator.prepare_data(0.2)
 
     visualiser = RawVisualiser()
+    clsf_visualiser = CLSFVisualiser()
 
     classifiers_dict = {
     "Logistic Regression": LogisticRegression,
@@ -223,7 +224,7 @@ if __name__=="__main__":
     """
     DictIterClassifier Test Case
     -------------------------------------------------------------------------------------------------------------------------------------------
-    """
+    
     
     dict_iter_classifier = DictIterClassifier(classifiers_dict = classifiers_dict)
     # Fit the model on the data
@@ -262,3 +263,51 @@ if __name__=="__main__":
                                                         feature3 = 2,
                                                         title = f'3d Scatter of {name} Predictions')
         #print(predictions)
+
+    """
+
+    
+    """
+    DictIterClassifier used to test CLSFVisualiser Plots
+    -------------------------------------------------------------------------------------------------------------------------------------------
+    """
+    
+    dict_iter_classifier = DictIterClassifier(classifiers_dict = classifiers_dict)
+    # Fit the model on the data
+    dict_iter_classifier.fit(X_train, y_train)
+
+    # Make predictions
+    predictions_dict_list = dict_iter_classifier.predict(X_test)
+    #print(predictions_dict_list)
+
+    feature1 = 2
+    feature2 = 4
+
+    for predictions_dict in predictions_dict_list:
+
+        name = predictions_dict['name']
+        predictions = predictions_dict['predicted_y']
+        classes = predictions_dict['classes']
+        predicted_probabilities = predictions_dict['predicted_proba']
+
+        clsf_visualiser.confusion_scatterplot(X_test,
+                                              y_test,
+                                              predictions,
+                                              feature1 = feature1, 
+                                              feature2 = feature2,
+                                              #feature_map= feature_map,
+                                              title = f'{name} Confusion Scatter',
+                                              save = False
+                                        )
+        
+        clsf_visualiser.pred_proba_scatterplot(X_test,
+                                               predicted_probabilities,
+                                               classes,
+                                               feature1 = feature1, 
+                                               feature2 = feature2,
+                                               #feature_map= feature_map,
+                                               title = f'Scatter of {name} Probability Predictions',
+                                               save = False
+                                            )
+
+        

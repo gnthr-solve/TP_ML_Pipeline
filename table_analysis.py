@@ -147,7 +147,7 @@ bimodal_mean_values.to_csv('Analysed_Experiments/bimodal_bal_mean_values.csv')
 """
 Alternative Bimodal Multinormal Experiment means at 3, -3
 -------------------------------------------------------------------------------------------------------------------------------------------
-"""
+
 def geometric_mean(x):
     return np.power(np.prod(x), 1/len(x))
 
@@ -218,3 +218,103 @@ print(bimodal_mean_values)
 #print(type(bimodal_mean_values))
 
 bimodal_mean_values.to_csv('Analysed_Experiments/bimodal_lower_dist_bal_mean_values.csv')
+
+"""
+
+
+"""
+Presentation Experiment
+-------------------------------------------------------------------------------------------------------------------------------------------
+"""
+def geometric_mean(x):
+    return np.power(np.prod(x), 1/len(x))
+
+presentation_results_df = pd.read_csv('Experiments/presentation_results.csv', index_col=0)
+
+presentation_results_df = presentation_results_df[['balancer','classifier','accuracy','precision','recall','F1 score','ROC AUC Score']]
+
+presentation_results_df = presentation_results_df.round(4)
+#print(presentation_results_df)
+#presentation_results_df.to_csv('Analysed_Experiments/presentation_exp_full_table.csv')
+
+
+eval_columns = ['accuracy', 'precision', 'recall', 'F1 score', 'ROC AUC Score']
+
+
+
+#Using groupby on classifiers with geometric mean
+#-------------------------------------------------------------------------------------------------------------------------------------------
+
+grouped_presentation_results = presentation_results_df.groupby('classifier')
+
+presentation_geom_mean_values = grouped_presentation_results[eval_columns].agg(geometric_mean).reset_index()
+presentation_geom_mean_values = presentation_geom_mean_values.round(3)
+
+#print(presentation_geom_mean_values)
+#print(type(presentation_geom_mean_values))
+
+presentation_geom_mean_sorted = presentation_geom_mean_values.iloc[
+    presentation_geom_mean_values.apply(lambda row: row[eval_columns].mean(), axis=1).argsort()[::-1]
+]
+print(presentation_geom_mean_sorted)
+
+#presentation_geom_mean_values.to_csv('Analysed_Experiments/presentation_clsf_geom_mean_values.csv')
+#presentation_geom_mean_sorted.to_csv('Analysed_Experiments/presentation_clsf_geom_mean_sorted.csv')
+
+
+#Using groupby on classifiers with arithmetic mean
+#-------------------------------------------------------------------------------------------------------------------------------------------
+
+grouped_presentation_results = presentation_results_df.groupby('classifier')
+
+presentation_mean_values = grouped_presentation_results[eval_columns].mean()
+presentation_mean_values = presentation_mean_values.round(3)
+
+print(presentation_mean_values)
+
+presentation_mean_sorted = presentation_mean_values.iloc[
+    presentation_mean_values.apply(lambda row: row[eval_columns].mean(), axis=1).argsort()[::-1]
+]
+#.reset_index(drop=True)
+print(presentation_mean_sorted)
+
+#presentation_mean_values.to_csv('Analysed_Experiments/presentation_clsf_mean_values.csv')
+#presentation_mean_sorted.to_csv('Analysed_Experiments/presentation_clsf_mean_sorted.csv')
+
+#Using groupby on balancer with geometric mean
+#-------------------------------------------------------------------------------------------------------------------------------------------
+
+grouped_presentation_results = presentation_results_df.groupby('balancer')
+
+presentation_geom_mean_values = grouped_presentation_results[eval_columns].agg(geometric_mean).reset_index()
+presentation_geom_mean_values = presentation_geom_mean_values.round(3)
+
+#print(presentation_geom_mean_values)
+#print(type(presentation_geom_mean_values))
+
+presentation_geom_mean_sorted = presentation_geom_mean_values.iloc[
+    presentation_geom_mean_values.apply(lambda row: row[eval_columns].mean(), axis=1).argsort()[::-1]
+]
+print(presentation_geom_mean_sorted)
+
+#presentation_geom_mean_values.to_csv('Analysed_Experiments/presentation_bal_geom_mean_values.csv')
+#presentation_geom_mean_sorted.to_csv('Analysed_Experiments/presentation_bal_geom_mean_sorted.csv')
+
+#Using groupby on balancers with arithmetic mean
+#-------------------------------------------------------------------------------------------------------------------------------------------
+
+grouped_presentation_results = presentation_results_df.groupby('balancer')
+
+presentation_mean_values = grouped_presentation_results[eval_columns].mean()
+presentation_mean_values = presentation_mean_values.round(3)
+
+print(presentation_mean_values)
+#print(type(presentation_mean_values))
+
+presentation_mean_sorted = presentation_mean_values.iloc[
+    presentation_mean_values.apply(lambda row: row[eval_columns].mean(), axis=1).argsort()[::-1]
+]
+print(presentation_mean_sorted)
+
+#presentation_mean_values.to_csv('Analysed_Experiments/presentation_bal_mean_values.csv')
+#presentation_mean_sorted.to_csv('Analysed_Experiments/presentation_bal_mean_sorted.csv')
