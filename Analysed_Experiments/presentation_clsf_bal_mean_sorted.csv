@@ -1,0 +1,36 @@
+classifier,balancer,accuracy,precision,recall,F1 score,ROC AUC Score
+Decision Tree,Unbalanced,0.994,0.936,0.94,0.938,0.968
+Decision Tree,KMeansSMOTE,0.994,0.931,0.94,0.936,0.968
+Decision Tree,SVMSMOTE,0.993,0.906,0.955,0.93,0.975
+Decision Tree,SMOTE,0.993,0.91,0.95,0.929,0.973
+Decision Tree,RandomOverSampler,0.993,0.953,0.906,0.929,0.952
+Decision Tree,BorderlineSMOTE,0.992,0.908,0.935,0.922,0.965
+Decision Tree,ADASYN,0.99,0.889,0.92,0.905,0.957
+Lightgbm,KMeansSMOTE,0.997,0.97,0.97,0.97,0.984
+Lightgbm,Unbalanced,0.997,0.98,0.96,0.97,0.98
+Lightgbm,SVMSMOTE,0.996,0.938,0.975,0.956,0.986
+Lightgbm,BorderlineSMOTE,0.996,0.942,0.97,0.956,0.984
+Lightgbm,RandomOverSampler,0.996,0.955,0.96,0.958,0.979
+Lightgbm,SMOTE,0.995,0.942,0.965,0.953,0.981
+Lightgbm,ADASYN,0.995,0.933,0.97,0.951,0.983
+Logistic Regression,Unbalanced,0.996,0.974,0.94,0.957,0.97
+Logistic Regression,KMeansSMOTE,0.994,0.936,0.95,0.943,0.973
+Logistic Regression,SMOTE,0.99,0.846,0.98,0.908,0.985
+Logistic Regression,RandomOverSampler,0.989,0.828,0.985,0.9,0.987
+Logistic Regression,SVMSMOTE,0.984,0.77,0.985,0.865,0.985
+Logistic Regression,BorderlineSMOTE,0.982,0.739,1.0,0.85,0.991
+Logistic Regression,ADASYN,0.978,0.693,1.0,0.819,0.988
+Random Forest,KMeansSMOTE,0.996,0.975,0.955,0.965,0.977
+Random Forest,RandomOverSampler,0.996,0.97,0.95,0.96,0.974
+Random Forest,Unbalanced,0.996,0.974,0.94,0.957,0.97
+Random Forest,BorderlineSMOTE,0.995,0.937,0.96,0.948,0.978
+Random Forest,SMOTE,0.994,0.937,0.955,0.946,0.976
+Random Forest,SVMSMOTE,0.994,0.919,0.965,0.942,0.98
+Random Forest,ADASYN,0.994,0.923,0.96,0.942,0.978
+XGboost,RandomOverSampler,0.997,0.97,0.97,0.97,0.984
+XGboost,Unbalanced,0.997,0.98,0.955,0.967,0.977
+XGboost,KMeansSMOTE,0.996,0.975,0.955,0.965,0.977
+XGboost,SMOTE,0.996,0.942,0.97,0.956,0.984
+XGboost,SVMSMOTE,0.995,0.924,0.975,0.949,0.986
+XGboost,ADASYN,0.995,0.929,0.97,0.949,0.983
+XGboost,BorderlineSMOTE,0.994,0.928,0.965,0.946,0.981

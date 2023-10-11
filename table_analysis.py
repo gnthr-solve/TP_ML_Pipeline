@@ -256,7 +256,7 @@ presentation_geom_mean_values = presentation_geom_mean_values.round(3)
 presentation_geom_mean_sorted = presentation_geom_mean_values.iloc[
     presentation_geom_mean_values.apply(lambda row: row[eval_columns].mean(), axis=1).argsort()[::-1]
 ]
-print(presentation_geom_mean_sorted)
+#print(presentation_geom_mean_sorted)
 
 #presentation_geom_mean_values.to_csv('Analysed_Experiments/presentation_clsf_geom_mean_values.csv')
 #presentation_geom_mean_sorted.to_csv('Analysed_Experiments/presentation_clsf_geom_mean_sorted.csv')
@@ -270,7 +270,7 @@ grouped_presentation_results = presentation_results_df.groupby('classifier')
 presentation_mean_values = grouped_presentation_results[eval_columns].mean()
 presentation_mean_values = presentation_mean_values.round(3)
 
-print(presentation_mean_values)
+#print(presentation_mean_values)
 
 presentation_mean_sorted = presentation_mean_values.iloc[
     presentation_mean_values.apply(lambda row: row[eval_columns].mean(), axis=1).argsort()[::-1]
@@ -279,26 +279,8 @@ presentation_mean_sorted = presentation_mean_values.iloc[
 print(presentation_mean_sorted)
 
 #presentation_mean_values.to_csv('Analysed_Experiments/presentation_clsf_mean_values.csv')
-#presentation_mean_sorted.to_csv('Analysed_Experiments/presentation_clsf_mean_sorted.csv')
+presentation_mean_sorted.to_csv('Analysed_Experiments/presentation_clsf_mean_sorted.csv')
 
-#Using groupby on balancer with geometric mean
-#-------------------------------------------------------------------------------------------------------------------------------------------
-
-grouped_presentation_results = presentation_results_df.groupby('balancer')
-
-presentation_geom_mean_values = grouped_presentation_results[eval_columns].agg(geometric_mean).reset_index()
-presentation_geom_mean_values = presentation_geom_mean_values.round(3)
-
-#print(presentation_geom_mean_values)
-#print(type(presentation_geom_mean_values))
-
-presentation_geom_mean_sorted = presentation_geom_mean_values.iloc[
-    presentation_geom_mean_values.apply(lambda row: row[eval_columns].mean(), axis=1).argsort()[::-1]
-]
-print(presentation_geom_mean_sorted)
-
-#presentation_geom_mean_values.to_csv('Analysed_Experiments/presentation_bal_geom_mean_values.csv')
-#presentation_geom_mean_sorted.to_csv('Analysed_Experiments/presentation_bal_geom_mean_sorted.csv')
 
 #Using groupby on balancers with arithmetic mean
 #-------------------------------------------------------------------------------------------------------------------------------------------
@@ -308,7 +290,7 @@ grouped_presentation_results = presentation_results_df.groupby('balancer')
 presentation_mean_values = grouped_presentation_results[eval_columns].mean()
 presentation_mean_values = presentation_mean_values.round(3)
 
-print(presentation_mean_values)
+#print(presentation_mean_values)
 #print(type(presentation_mean_values))
 
 presentation_mean_sorted = presentation_mean_values.iloc[
@@ -317,4 +299,27 @@ presentation_mean_sorted = presentation_mean_values.iloc[
 print(presentation_mean_sorted)
 
 #presentation_mean_values.to_csv('Analysed_Experiments/presentation_bal_mean_values.csv')
-#presentation_mean_sorted.to_csv('Analysed_Experiments/presentation_bal_mean_sorted.csv')
+presentation_mean_sorted.to_csv('Analysed_Experiments/presentation_bal_mean_sorted.csv')
+
+
+
+#Grouping w.r.t. Classifiers and Balancers
+#-------------------------------------------------------------------------------------------------------------------------------------------
+
+grouped_presentation_results = presentation_results_df.groupby(['classifier', 'balancer'])
+
+presentation_mean_values = grouped_presentation_results[eval_columns].mean()
+presentation_mean_values = presentation_mean_values.round(3)
+
+#print(presentation_mean_values)
+#print(type(presentation_mean_values))
+
+presentation_mean_values = presentation_mean_values.assign(mean = presentation_mean_values[eval_columns].mean(axis = 1))
+
+presentation_mean_sorted = presentation_mean_values.groupby(level=0, group_keys=False).apply(lambda g:g.sort_values('mean', ascending=False))
+#print(presentation_mean_sorted)
+presentation_mean_sorted = presentation_mean_sorted.drop(columns= 'mean')
+print(presentation_mean_sorted)
+
+#presentation_mean_values.to_csv('Analysed_Experiments/presentation_clsf_bal_mean_values.csv')
+presentation_mean_sorted.to_csv('Analysed_Experiments/presentation_clsf_bal_mean_sorted.csv')

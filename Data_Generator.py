@@ -504,34 +504,36 @@ if __name__ == "__main__":
         (X_train, y_train, 'Train data'),
     ]
 
-
+    feature_map = {
+        0: 'Normal Feature',
+        1: 'Normal Feature',
+        2: 'Beta Feature',
+        3: 'Poisson Feature',
+        4: 'Gamma Feature',
+    }
     #visualiser.plot_2d_scatter((data[0], data[1]),0, 1)
     visualiser.plot_2d_scatter_multiple_datasets_px(datasets, 
                                                     feature1 = 0, 
-                                                    feature2 = 1, 
+                                                    feature2 = 1,
+                                                    feature_map = feature_map,
                                                     title = f'Bimodal Normal vs Unimodal Scatterplot',
                                                     save = False
                                                     )
     
     visualiser.plot_2d_scatter_multiple_datasets_px(datasets, 
                                                     feature1 = 2, 
-                                                    feature2 = 3, 
+                                                    feature2 = 3,
+                                                    feature_map = feature_map,
                                                     title = f'Beta vs Poisson',
                                                     save = False
                                                     )
     
     visualiser.plot_2d_scatter_multiple_datasets_px(datasets, 
                                                     feature1 = 2, 
-                                                    feature2 = 4, 
+                                                    feature2 = 4,
+                                                    feature_map = feature_map,
                                                     title = f'Beta vs Gamma',
                                                     save = False
                                                     )
     
-    '''
-    visualiser.plot_3d_scatter_multiple_datasets_px(datasets,
-                                                    feature1 = 0, 
-                                                    feature2 = 1,
-                                                    feature3 = 2,
-                                                    title = f'3d Scatter of generated Data')
-    '''
     
