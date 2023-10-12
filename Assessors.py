@@ -53,11 +53,6 @@ class CorStudy():
 
 
 
-
-
-
-
-
 class Assessor(Data):
 
     def __init__(self, test_size, generation_dict_list, balancers_dict, classifiers_dict):
@@ -199,126 +194,36 @@ class Assessor(Data):
         return results_df
     
 
-    def create_calibration_curves(self, doc_dict, spline = False, save = False, title = f'Calibration Curves'):
+    def create_calibration_curves(self, doc_dict, selection_tuple_set = {}, spline = False, save = False, title = f'Calibration Curves'):
 
-        doc_reference_dict = {
-            "n_features": 0,
-            "n_samples": 1,
-            "class_ratio": 2, 
-            "doc_string": 3,
-            "balancer": 4, 
-            "classifier": 5
-        }
-
-        doc_reference_dict = {key: index
-                              for key, index in doc_reference_dict.items()
-                              if doc_dict.get(key)
-                            }
-        
-        names_dict = {key: [*list(map(str, extract_table_info(assign_list[0]))), 
-                            assign_list[1][0], 
-                            assign_list[2][0]]
-                      for key, assign_list in self.data_dict['assignment_dict'].items()}
-
-        names_dict = {key: ', '.join([doc_list[i] for i in doc_reference_dict.values()]) 
-                      for key, doc_list in names_dict.items()}
-
-        metrics = FMLP_Metrics()
+        metrics = FMLP_Metrics(doc_dict, selection_tuple_set)
 
         if spline:
-            metrics.calibration_curves_spline(names_dict, save = save, title = title)
-            
+            metrics.calibration_curves_spline(save = save, title = title)
+        
         else:
-            metrics.calibration_curves(names_dict, save = save, title = title)
+            metrics.calibration_curves(save = save, title = title)
 
-        
-    def create_decision_curves(self, doc_dict, data_ind = 0, m = 10, save = False, title = f'Decision Curves'):
-
-        doc_reference_dict = {
-            "n_features": 0,
-            "n_samples": 1,
-            "class_ratio": 2, 
-            "doc_string": 3,
-            "balancer": 4, 
-            "classifier": 5
-        }
-
-        doc_reference_dict = {key: index
-                              for key, index in doc_reference_dict.items()
-                              if doc_dict.get(key)
-                            }
-        
-        names_dict = {key: [*list(map(str, extract_table_info(assign_list[0]))), 
-                            assign_list[1][0], 
-                            assign_list[2][0]]
-                      for key, assign_list in self.data_dict['assignment_dict'].items()}
-
-        names_dict = {key: ', '.join([doc_list[i] for i in doc_reference_dict.values()]) 
-                      for key, doc_list in names_dict.items()}
-
-        metrics = FMLP_Metrics()
-
-        metrics.decision_curves(names_dict, data_ind = data_ind, m = m, save = save, title = title)
-
-
-    def create_confusion_plots(self, doc_dict, feature1 = 0, feature2 = 1, feature_map = {}, save = False):
-
-        doc_reference_dict = {
-            "n_features": 0,
-            "n_samples": 1,
-            "class_ratio": 2, 
-            "doc_string": 3,
-            "balancer": 4, 
-            "classifier": 5
-        }
-
-        doc_reference_dict = {key: index
-                              for key, index in doc_reference_dict.items()
-                              if doc_dict.get(key)
-                            }
-        
-        names_dict = {key: [*list(map(str, extract_table_info(assign_list[0]))), 
-                            assign_list[1][0], 
-                            assign_list[2][0]]
-                      for key, assign_list in self.data_dict['assignment_dict'].items()}
-
-        names_dict = {key: ', '.join([doc_list[i] for i in doc_reference_dict.values()]) 
-                      for key, doc_list in names_dict.items()}
-
-        metrics = FMLP_Metrics()
-
-        metrics.confusion_scatter(feature1, feature2, names_dict, feature_map = feature_map, save = save)
     
+    def create_decision_curves(self, doc_dict, selection_tuple_set = {}, data_ind = 0, m = 10, save = False, title = f'Decision Curves'):
 
-    def create_pred_proba_plots(self, doc_dict, feature1 = 0, feature2 = 1, feature_map = {}, save = False):
+        metrics = FMLP_Metrics(doc_dict, selection_tuple_set)
 
-        doc_reference_dict = {
-            "n_features": 0,
-            "n_samples": 1,
-            "class_ratio": 2, 
-            "doc_string": 3,
-            "balancer": 4, 
-            "classifier": 5
-        }
-
-        doc_reference_dict = {key: index
-                              for key, index in doc_reference_dict.items()
-                              if doc_dict.get(key)
-                            }
-        
-        names_dict = {key: [*list(map(str, extract_table_info(assign_list[0]))), 
-                            assign_list[1][0], 
-                            assign_list[2][0]]
-                      for key, assign_list in self.data_dict['assignment_dict'].items()}
-
-        names_dict = {key: ', '.join([doc_list[i] for i in doc_reference_dict.values()]) 
-                      for key, doc_list in names_dict.items()}
-
-        metrics = FMLP_Metrics()
-
-        metrics.pred_proba_scatter(feature1, feature2, names_dict, feature_map = feature_map, save = save)
+        metrics.decision_curves(data_ind = data_ind, m = m, save = save, title = title)
 
 
+    def create_confusion_plots(self, doc_dict, selection_tuple_set = {}, feature1 = 0, feature2 = 1, feature_map = {}, save = False):
+
+        metrics = FMLP_Metrics(doc_dict, selection_tuple_set)
+
+        metrics.confusion_scatter(feature1, feature2, feature_map = feature_map, save = save)
+
+
+    def create_pred_proba_plots(self, doc_dict, selection_tuple_set = {}, feature1 = 0, feature2 = 1, feature_map = {}, save = False):
+
+        metrics = FMLP_Metrics(doc_dict, selection_tuple_set)
+
+        metrics.pred_proba_scatter(feature1, feature2, feature_map = feature_map, save = save)
 
 
 

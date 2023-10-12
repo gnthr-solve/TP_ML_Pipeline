@@ -13,6 +13,7 @@ from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
 
 from Assessors import Assessor
+from Metrics import FMLP_Metrics
 from gen_parameters import presentation_experiment_dict
 from helper_tools import extract_table_info, create_simple_normal_dict_list
 
@@ -91,47 +92,10 @@ for distance in class_distance_list[6:]:
 """
 
 
-
 """
 Presentation Experiment
 -------------------------------------------------------------------------------------------------------------------------------------------
-
-assessor = Assessor(0.2, [presentation_experiment_dict], balancing_methods, classifiers_dict)
-
-assessor.generate()
-assessor.balance()
-assessor.clsf_pred()
-
-results_df = assessor.calc_std_metrics()
-print(results_df)
-
-
-results_df.to_csv('Experiments/presentation_results.csv')
-
-
-#All calibration curves
-#-------------------------------------------------------------------------------------------------------------------------------------------
-doc_dict = {
-        "n_features": False,
-        "n_samples": False,
-        "class_ratio": False, 
-        "doc_string": False,
-        "balancer": True, 
-        "classifier": True
-    }
-
-assessor.create_confusion_plots(doc_dict, feature1=0, feature2=2)
-assessor.create_calibration_curves(doc_dict, spline = True, save = False, title = f'All Calibration Curves')
-assessor.create_decision_curves(doc_dict = doc_dict, m=20, save = False, title = f'All Decision Curves')
-
 """
-
-
-"""
-Presentation Experiment - Balancer Specific Calibration Curves
--------------------------------------------------------------------------------------------------------------------------------------------
-"""
-
 balancing_methods = {
 "Unbalanced": None,
 "ADASYN": ADASYN,
@@ -144,47 +108,99 @@ balancing_methods = {
 }
 
 classifiers_dict = {
+"Logistic Regression": LogisticRegression,
 "Decision Tree": DecisionTreeClassifier,
 "Random Forest": RandomForestClassifier,
-"Logistic Regression": LogisticRegression,
 #"SVC": SVC,
 #"Naive Bayes": GaussianNB,
 "XGboost": XGBClassifier,
 "Lightgbm": LGBMClassifier
 }
 
-m = 20
-for name, bal in balancing_methods.items():
+assessor = Assessor(0.2, [presentation_experiment_dict], balancing_methods, classifiers_dict)
 
-    balancer_dict = {name: bal}
-    #print(balancer_dict)
-    assessor = Assessor(0.2, [presentation_experiment_dict], balancer_dict, classifiers_dict)
-    
-    assessor.generate()
-    assessor.balance()
-    assessor.clsf_pred()
 
-    #calibration curves test
-    #-------------------------------------------------------------------------------------------------------------------------------------------
-    doc_dict = {
-            "n_features": False,
-            "n_samples": False,
-            "class_ratio": False, 
-            "doc_string": False,
-            "balancer": False, 
-            "classifier": True
-        }
-    
-    feature_map = {
-        0: 'Normal Feature',
-        1: 'Normal Feature',
-        2: 'Beta Feature',
-        3: 'Poisson Feature',
-        4: 'Gamma Feature',
+assessor.generate()
+assessor.balance()
+assessor.clsf_pred()
+
+#calc_std_metrics() test
+#-------------------------------------------------------------------------------------------------------------------------------------------
+results_df = pd.DataFrame()
+new_results_df = assessor.calc_std_metrics()
+
+#print(new_results_df)
+results_df = pd.concat([results_df, new_results_df],
+                        ignore_index=True,
+                        axis = 0).reset_index(drop=True)
+
+print(results_df)
+#print(results_df[results_df['classifier'] == 'Lightgbm'])
+#results_df.to_csv('Experiments/bimodal_maj_lower_dist.csv')
+
+
+#Create plots of selection in selection_tuple_set
+#-------------------------------------------------------------------------------------------------------------------------------------------
+doc_dict = {
+        "n_features": False,
+        "n_samples": False,
+        "class_ratio": False, 
+        "doc_string": False,
+        "balancer": True, 
+        "classifier": True
     }
-    
-    assessor.create_confusion_plots(doc_dict, feature1=0, feature2=4, feature_map = feature_map, save = False)
-    assessor.create_pred_proba_plots(doc_dict, feature1=0, feature2=2, feature_map = feature_map, save = False)
-    assessor.create_calibration_curves(doc_dict, spline = True, save = False, title = f'Calibration Curves for {name}')
-    assessor.create_decision_curves(doc_dict = doc_dict, m = 20, save = False, title = f'Decision Curves for {name}')
 
+feature_map = {
+    0: 'Normal Feature',
+    1: 'Normal Feature',
+    2: 'Beta Feature',
+    3: 'Poisson Feature',
+    4: 'Gamma Feature',
+}
+
+selection_tuple_set = {
+    ('Decision Tree', 'Unbalanced'),
+    ('Lightgbm', 'KMeansSMOTE'),
+    #('Logistic Regression','Unbalanced'),
+    #('Random Forest', 'KMeansSMOTE'),
+    #('XGboost', 'RandomOverSampler')
+}
+
+'''
+assessor.create_confusion_plots(doc_dict,
+                                selection_tuple_set,
+                                feature1=0, 
+                                feature2=2, 
+                                feature_map = feature_map, 
+                                save = False)
+
+assessor.create_pred_proba_plots(doc_dict,
+                                    selection_tuple_set,
+                                    feature1=0, 
+                                    feature2=2, 
+                                    feature_map = feature_map, 
+                                    save = False)
+
+assessor.create_calibration_curves(doc_dict,
+                                    selection_tuple_set, 
+                                    spline = True, 
+                                    save = False, 
+                                    title = f'Calibration Curves')
+
+assessor.create_decision_curves(doc_dict = doc_dict,
+                                selection_tuple_set = selection_tuple_set,
+                                m=20, 
+                                save = False, 
+                                title = f'Decision Curves')
+'''
+
+
+#Generate confusion and probability plots for all feature combinations for visualisation
+#-------------------------------------------------------------------------------------------------------------------------------------------
+from itertools import combinations
+save = False
+metrics = FMLP_Metrics(doc_dict, selection_tuple_set)
+
+for feature1, feature2 in combinations([1, 2, 3, 4], 2):
+    metrics.confusion_scatter(feature1, feature2, feature_map = feature_map, save = save)
+    metrics.pred_proba_scatter(feature1, feature2, feature_map = feature_map, save = save)

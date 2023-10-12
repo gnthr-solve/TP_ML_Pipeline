@@ -4,7 +4,7 @@ import pandas as pd
 import plotly.express as px
 from scipy.stats import linregress
 from Visualiser import CLSFVisualiser
-from helper_tools import Data
+from helper_tools import Data, extract_table_info
 from scipy.interpolate import interp1d
 
 
@@ -314,7 +314,43 @@ class IterMetrics():
 
 class FMLP_Metrics(Data):
 
-    #def __init__(self):
+    def __init__(self, doc_dict = {}, selection_tuple_set = {}):
+
+        doc_reference_dict = {
+            "n_features": 0,
+            "n_samples": 1,
+            "class_ratio": 2, 
+            "doc_string": 3,
+            "balancer": 4, 
+            "classifier": 5
+        }
+
+        # Turn the assignment lists into descriptor lists with the names of balancers and classifiers and the distribution description
+        names_dict = {key: [*list(map(str, extract_table_info(assign_list[0]))), 
+                            assign_list[1][0], 
+                            assign_list[2][0]]
+                            for key, assign_list in self.data_dict['assignment_dict'].items()}
+        
+        if doc_dict:
+            doc_reference_dict = {key: index
+                              for key, index in doc_reference_dict.items()
+                              if doc_dict.get(key)
+                            }
+            
+            # Join the names_dict values that are contained in the doc_reference_dict for the legend
+            self.names_dict = {key: ', '.join([doc_list[i] for i in doc_reference_dict.values()]) 
+                               for key, doc_list in names_dict.items()}
+        else:
+            self.names_dict = {key: ', '.join(doc_list) 
+                               for key, doc_list in names_dict.items()}
+            
+        if selection_tuple_set:
+            # select those keys for which a tuple exists that is contained in the corresponding names list
+            self.selection_set = {key for key in names_dict
+                                  if any(all(elem in names_dict[key] for elem in tup) for tup in selection_tuple_set)}
+        else:
+            self.selection_set = set(names_dict.keys())
+
 
 
     def confusion_metrics(self, std_metric_list):
@@ -336,7 +372,7 @@ class FMLP_Metrics(Data):
 
 
 
-    def confusion_scatter(self, feature1, feature2, names_dict, feature_map, save = False):
+    def confusion_scatter(self, feature1, feature2, feature_map, save = False):
 
         clsf_visualiser = CLSFVisualiser()
 
@@ -344,7 +380,7 @@ class FMLP_Metrics(Data):
         y_test = self.data_dict['org_y_test']
         y_pred = self.data_dict['clsf_predictions_y']
 
-        for (i,j,k) in self.data_dict['assignment_dict']:
+        for (i,j,k) in self.selection_set:
 
             y_i_test = y_test[i]
             y_i_test = y_i_test[~np.isnan(y_i_test)]
@@ -365,13 +401,13 @@ class FMLP_Metrics(Data):
                                                   feature1 = feature1, 
                                                   feature2 = feature2,
                                                   feature_map= feature_map,
-                                                  title = f'{names_dict[(i,j,k)]} Confusion Scatterplot',
+                                                  title = f'{self.names_dict[(i,j,k)]} Confusion Scatterplot',
                                                   save = save
                                                 )
 
 
 
-    def pred_proba_scatter(self, feature1, feature2, names_dict, feature_map, save = False):
+    def pred_proba_scatter(self, feature1, feature2, feature_map, save = False):
 
         clsf_visualiser = CLSFVisualiser()
 
@@ -379,7 +415,7 @@ class FMLP_Metrics(Data):
         pred_probabilities = self.data_dict['clsf_predictions_proba']
         class_orders = self.data_dict['classes_order']
 
-        for (i,j,k) in self.data_dict['assignment_dict']:
+        for (i,j,k) in self.selection_set:
 
             corr_classes = class_orders[i, j, k]
 
@@ -400,13 +436,13 @@ class FMLP_Metrics(Data):
                                                    feature1 = feature1, 
                                                    feature2 = feature2,
                                                    feature_map= feature_map,
-                                                   title = f'{names_dict[(i,j,k)]} Pred. Probability Scatterplot',
+                                                   title = f'{self.names_dict[(i,j,k)]} Pred. Probability Scatterplot',
                                                    save = save
                                                 )
 
 
 
-    def calibration_curves(self, names_dict, save = False, title = f'Calibration Curves'):
+    def calibration_curves(self, save = False, title = f'Calibration Curves'):
         predicted_proba_raw = self.data_dict['clsf_predictions_proba']
         class_orders = self.data_dict['classes_order']
         y_test = self.data_dict['org_y_test']
@@ -419,7 +455,7 @@ class FMLP_Metrics(Data):
         'mean_freq': [np.arange(0, 1, 1/m)],
         'name': [['Optimum' for _ in range(m)]]
         }
-        for (i,j,k) in self.data_dict['assignment_dict']:
+        for (i,j,k) in self.selection_set:
 
             corr_classes = class_orders[i, j, k]
             
@@ -442,7 +478,7 @@ class FMLP_Metrics(Data):
 
             creation_dict['mean_pred_proba'].append([bin.sum()/len(bin) for bin in binned_probabilities])
             creation_dict['mean_freq'].append([bin.sum()/len(bin) for bin in binned_y_test])
-            creation_dict['name'].append([names_dict[(i,j,k)] for _ in range(m)])
+            creation_dict['name'].append([self.names_dict[(i,j,k)] for _ in range(m)])
 
         
         #print(creation_dict['name'])
@@ -474,7 +510,7 @@ class FMLP_Metrics(Data):
 
 
 
-    def calibration_curves_spline(self, names_dict, save = False, title = f'Calibration Curves with Spline Interpolation'):
+    def calibration_curves_spline(self, save = False, title = f'Calibration Curves with Spline Interpolation'):
         predicted_proba_raw = self.data_dict['clsf_predictions_proba']
         class_orders = self.data_dict['classes_order']
         y_test = self.data_dict['org_y_test']
@@ -489,7 +525,7 @@ class FMLP_Metrics(Data):
         'mean_freq': [np.arange(0, 1, 1/m)],
         'name': [['Optimum' for _ in range(m)]]
         }
-        for (i,j,k) in self.data_dict['assignment_dict']:
+        for (i,j,k) in self.selection_set:
 
             corr_classes = class_orders[i, j, k]
             
@@ -520,7 +556,7 @@ class FMLP_Metrics(Data):
 
             creation_dict['mean_pred_proba'].append(np.arange(0, 1, 1/m))
             creation_dict['mean_freq'].append([spline(x) for x in np.arange(0, 1, 1/m)])
-            creation_dict['name'].append([names_dict[(i,j,k)] for _ in range(m)])
+            creation_dict['name'].append([self.names_dict[(i,j,k)] for _ in range(m)])
 
         
         #print(creation_dict['name'])
@@ -552,7 +588,7 @@ class FMLP_Metrics(Data):
 
 
 
-    def decision_curves(self, names_dict, data_ind = 0, m = 10, save = False, title = f'Decision Curves'):
+    def decision_curves(self, data_ind = 0, m = 10, save = False, title = f'Decision Curves'):
         predicted_proba_raw = self.data_dict['clsf_predictions_proba']
         class_orders = self.data_dict['classes_order']
         y_test = self.data_dict['org_y_test']
@@ -567,7 +603,7 @@ class FMLP_Metrics(Data):
         'name': [['Treat All' for _ in range(m)]]
         }
 
-        assign_keys = set([(j,k) for (i,j,k) in self.data_dict['assignment_dict']])
+        assign_keys = set([(j,k) for (i,j,k) in self.selection_set])
         for (j,k) in assign_keys:
 
             corr_classes = class_orders[data_ind, j, k]
@@ -597,7 +633,7 @@ class FMLP_Metrics(Data):
 
             creation_dict['pred_threshold'].append(np.arange(0, 1, 1/m))
             creation_dict['net_benefit'].append(net_benefit_list)
-            creation_dict['name'].append([names_dict[(data_ind,j,k)] for _ in range(m)])
+            creation_dict['name'].append([self.names_dict[(data_ind,j,k)] for _ in range(m)])
 
         
         #print(creation_dict['name'])

@@ -52,6 +52,7 @@ class Assessor(Data):
                                                         )
                                             }
 
+
     @timing_decorator
     def generate(self):     
 
@@ -205,127 +206,40 @@ class Assessor(Data):
 
 
     @timing_decorator
-    def create_calibration_curves(self, doc_dict, spline = False, save = False, title = f'Calibration Curves'):
+    def create_calibration_curves(self, doc_dict, selection_tuple_set = {}, spline = False, save = False, title = f'Calibration Curves'):
 
-        doc_reference_dict = {
-            "n_features": 0,
-            "n_samples": 1,
-            "class_ratio": 2, 
-            "doc_string": 3,
-            "balancer": 4, 
-            "classifier": 5
-        }
-
-        doc_reference_dict = {key: index
-                              for key, index in doc_reference_dict.items()
-                              if doc_dict.get(key)
-                            }
-        
-        names_dict = {key: [*list(map(str, extract_table_info(assign_list[0]))), 
-                            assign_list[1][0], 
-                            assign_list[2][0]]
-                      for key, assign_list in self.data_dict['assignment_dict'].items()}
-
-        names_dict = {key: ', '.join([doc_list[i] for i in doc_reference_dict.values()]) 
-                      for key, doc_list in names_dict.items()}
-
-        metrics = Metrics()
+        metrics = Metrics(doc_dict, selection_tuple_set)
 
         if spline:
-            metrics.calibration_curves_spline(names_dict, save = save, title = title)
+            metrics.calibration_curves_spline(save = save, title = title)
         
         else:
-            metrics.calibration_curves(names_dict, save = save, title = title)
+            metrics.calibration_curves(save = save, title = title)
 
     
     @timing_decorator
-    def create_decision_curves(self, doc_dict, data_ind = 0, m = 10, save = False, title = f'Decision Curves'):
+    def create_decision_curves(self, doc_dict, selection_tuple_set = {}, data_ind = 0, m = 10, save = False, title = f'Decision Curves'):
 
-        doc_reference_dict = {
-            "n_features": 0,
-            "n_samples": 1,
-            "class_ratio": 2, 
-            "doc_string": 3,
-            "balancer": 4, 
-            "classifier": 5
-        }
+        metrics = Metrics(doc_dict, selection_tuple_set)
 
-        doc_reference_dict = {key: index
-                              for key, index in doc_reference_dict.items()
-                              if doc_dict.get(key)
-                            }
-        
-        names_dict = {key: [*list(map(str, extract_table_info(assign_list[0]))), 
-                            assign_list[1][0], 
-                            assign_list[2][0]]
-                      for key, assign_list in self.data_dict['assignment_dict'].items()}
-
-        names_dict = {key: ', '.join([doc_list[i] for i in doc_reference_dict.values()]) 
-                      for key, doc_list in names_dict.items()}
-
-        metrics = Metrics()
-
-        metrics.decision_curves(names_dict, data_ind = data_ind, m = m, save = save, title = title)
+        metrics.decision_curves(data_ind = data_ind, m = m, save = save, title = title)
 
 
     @timing_decorator
-    def create_confusion_plots(self, doc_dict, feature1 = 0, feature2 = 1, feature_map = {}, save = False):
+    def create_confusion_plots(self, doc_dict, selection_tuple_set = {}, feature1 = 0, feature2 = 1, feature_map = {}, save = False):
 
-        doc_reference_dict = {
-            "n_features": 0,
-            "n_samples": 1,
-            "class_ratio": 2, 
-            "doc_string": 3,
-            "balancer": 4, 
-            "classifier": 5
-        }
+        metrics = Metrics(doc_dict, selection_tuple_set)
 
-        doc_reference_dict = {key: index
-                              for key, index in doc_reference_dict.items()
-                              if doc_dict.get(key)
-                            }
-        
-        names_dict = {key: [*list(map(str, extract_table_info(assign_list[0]))), 
-                            assign_list[1][0], 
-                            assign_list[2][0]]
-                      for key, assign_list in self.data_dict['assignment_dict'].items()}
-
-        names_dict = {key: ', '.join([doc_list[i] for i in doc_reference_dict.values()]) 
-                      for key, doc_list in names_dict.items()}
-
-        metrics = Metrics()
-
-        metrics.confusion_scatter(feature1, feature2, names_dict, feature_map = feature_map, save = save)
+        metrics.confusion_scatter(feature1, feature2, feature_map = feature_map, save = save)
 
 
     @timing_decorator
-    def create_pred_proba_plots(self, doc_dict, feature1 = 0, feature2 = 1, feature_map = {}, save = False):
+    def create_pred_proba_plots(self, doc_dict, selection_tuple_set = {}, feature1 = 0, feature2 = 1, feature_map = {}, save = False):
 
-        doc_reference_dict = {
-            "n_features": 0,
-            "n_samples": 1,
-            "class_ratio": 2, 
-            "doc_string": 3,
-            "balancer": 4, 
-            "classifier": 5
-        }
+        metrics = Metrics(doc_dict, selection_tuple_set)
 
-        doc_reference_dict = {key: index
-                              for key, index in doc_reference_dict.items()
-                              if doc_dict.get(key)
-                            }
-        
-        names_dict = {key: [*list(map(str, extract_table_info(assign_list[0]))), 
-                            assign_list[1][0], 
-                            assign_list[2][0]]
-                      for key, assign_list in self.data_dict['assignment_dict'].items()}
+        metrics.pred_proba_scatter(feature1, feature2, feature_map = feature_map, save = save)
 
-        names_dict = {key: ', '.join([doc_list[i] for i in doc_reference_dict.values()]) 
-                      for key, doc_list in names_dict.items()}
-
-        metrics = Metrics()
-
-        metrics.pred_proba_scatter(feature1, feature2, names_dict, feature_map = feature_map, save = save)
 
 
 
@@ -456,7 +370,6 @@ class Generator(Data):
         
 
 
-
 class DataBalancer(Data):
 
     def __init__(self, bal_params_dict = {}):
@@ -512,7 +425,6 @@ class DataBalancer(Data):
             self.data_dict['bal_y_train'][data_ind, bal_ind, :n] = resample[1]
 
             
-
 
 
 class DataClassifier(Data):
@@ -578,10 +490,45 @@ class DataClassifier(Data):
     
 
     
-
 class Metrics(Data):
 
-    #def __init__(self):
+    def __init__(self, doc_dict = {}, selection_tuple_set = {}):
+
+        doc_reference_dict = {
+            "n_features": 0,
+            "n_samples": 1,
+            "class_ratio": 2, 
+            "doc_string": 3,
+            "balancer": 4, 
+            "classifier": 5
+        }
+
+        # Turn the assignment lists into descriptor lists with the names of balancers and classifiers and the distribution description
+        names_dict = {key: [*list(map(str, extract_table_info(assign_list[0]))), 
+                            assign_list[1][0], 
+                            assign_list[2][0]]
+                            for key, assign_list in self.data_dict['assignment_dict'].items()}
+        
+        if doc_dict:
+            doc_reference_dict = {key: index
+                              for key, index in doc_reference_dict.items()
+                              if doc_dict.get(key)
+                            }
+            
+            # Join the names_dict values that are contained in the doc_reference_dict for the legend
+            self.names_dict = {key: ', '.join([doc_list[i] for i in doc_reference_dict.values()]) 
+                               for key, doc_list in names_dict.items()}
+        else:
+            self.names_dict = {key: ', '.join(doc_list) 
+                               for key, doc_list in names_dict.items()}
+            
+        if selection_tuple_set:
+            # select those keys for which a tuple exists that is contained in the corresponding names list
+            self.selection_set = {key for key in names_dict
+                                  if any(all(elem in names_dict[key] for elem in tup) for tup in selection_tuple_set)}
+        else:
+            self.selection_set = set(names_dict.keys())
+
 
 
     def confusion_metrics(self, std_metric_list):
@@ -603,7 +550,7 @@ class Metrics(Data):
 
 
 
-    def confusion_scatter(self, feature1, feature2, names_dict, feature_map, save = False):
+    def confusion_scatter(self, feature1, feature2, feature_map, save = False):
 
         clsf_visualiser = CLSFVisualiser()
 
@@ -611,7 +558,7 @@ class Metrics(Data):
         y_test = self.data_dict['org_y_test']
         y_pred = self.data_dict['clsf_predictions_y']
 
-        for (i,j,k) in self.data_dict['assignment_dict']:
+        for (i,j,k) in self.selection_set:
 
             y_i_test = y_test[i]
             y_i_test = y_i_test[~np.isnan(y_i_test)]
@@ -632,13 +579,13 @@ class Metrics(Data):
                                                   feature1 = feature1, 
                                                   feature2 = feature2,
                                                   feature_map= feature_map,
-                                                  title = f'{names_dict[(i,j,k)]} Confusion Scatterplot',
+                                                  title = f'{self.names_dict[(i,j,k)]} Confusion Scatterplot',
                                                   save = save
                                                 )
 
 
 
-    def pred_proba_scatter(self, feature1, feature2, names_dict, feature_map, save = False):
+    def pred_proba_scatter(self, feature1, feature2, feature_map, save = False):
 
         clsf_visualiser = CLSFVisualiser()
 
@@ -646,7 +593,7 @@ class Metrics(Data):
         pred_probabilities = self.data_dict['clsf_predictions_proba']
         class_orders = self.data_dict['classes_order']
 
-        for (i,j,k) in self.data_dict['assignment_dict']:
+        for (i,j,k) in self.selection_set:
 
             corr_classes = class_orders[i, j, k]
 
@@ -667,13 +614,13 @@ class Metrics(Data):
                                                    feature1 = feature1, 
                                                    feature2 = feature2,
                                                    feature_map= feature_map,
-                                                   title = f'{names_dict[(i,j,k)]} Confusion Scatterplot',
+                                                   title = f'{self.names_dict[(i,j,k)]} Predicted Probabilities',
                                                    save = save
                                                 )
 
 
 
-    def calibration_curves(self, names_dict, save = False, title = f'Calibration Curves'):
+    def calibration_curves(self, save = False, title = f'Calibration Curves'):
         predicted_proba_raw = self.data_dict['clsf_predictions_proba']
         class_orders = self.data_dict['classes_order']
         y_test = self.data_dict['org_y_test']
@@ -688,7 +635,7 @@ class Metrics(Data):
         'mean_freq': [np.arange(0, 1, 1/m)],
         'name': [['Optimum' for _ in range(m)]]
         }
-        for (i,j,k) in self.data_dict['assignment_dict']:
+        for (i,j,k) in self.selection_set:
 
             corr_classes = class_orders[i, j, k]
             
@@ -711,7 +658,7 @@ class Metrics(Data):
 
             creation_dict['mean_pred_proba'].append([bin.sum()/len(bin) for bin in binned_probabilities])
             creation_dict['mean_freq'].append([bin.sum()/len(bin) for bin in binned_y_test])
-            creation_dict['name'].append([names_dict[(i,j,k)] for _ in range(m)])
+            creation_dict['name'].append([self.names_dict[(i,j,k)] for _ in range(m)])
 
         
         #print(creation_dict['name'])
@@ -743,7 +690,7 @@ class Metrics(Data):
 
     
 
-    def calibration_curves_spline(self, names_dict, save = False, title = f'Calibration Curves with Spline Interpolation'):
+    def calibration_curves_spline(self, save = False, title = f'Calibration Curves with Spline Interpolation'):
         predicted_proba_raw = self.data_dict['clsf_predictions_proba']
         class_orders = self.data_dict['classes_order']
         y_test = self.data_dict['org_y_test']
@@ -758,7 +705,7 @@ class Metrics(Data):
         'mean_freq': [np.arange(0, 1, 1/m)],
         'name': [['Optimum' for _ in range(m)]]
         }
-        for (i,j,k) in self.data_dict['assignment_dict']:
+        for (i,j,k) in self.selection_set:
 
             corr_classes = class_orders[i, j, k]
             
@@ -796,7 +743,7 @@ class Metrics(Data):
 
             creation_dict['mean_pred_proba'].append(np.arange(0, 1, 1/m))
             creation_dict['mean_freq'].append([spline(x) for x in np.arange(0, 1, 1/m)])
-            creation_dict['name'].append([names_dict[(i,j,k)] for _ in range(m)])
+            creation_dict['name'].append([self.names_dict[(i,j,k)] for _ in range(m)])
 
         
         #print(creation_dict['name'])
@@ -829,7 +776,7 @@ class Metrics(Data):
 
 
 
-    def decision_curves(self, names_dict, data_ind = 0, m = 10, save = False, title = f'Decision Curves'):
+    def decision_curves(self, data_ind = 0, m = 10, save = False, title = f'Decision Curves'):
         predicted_proba_raw = self.data_dict['clsf_predictions_proba']
         class_orders = self.data_dict['classes_order']
         y_test = self.data_dict['org_y_test']
@@ -846,7 +793,7 @@ class Metrics(Data):
         'name': [['Treat All' for _ in range(m)]]
         }
 
-        assign_keys = set([(j,k) for (i,j,k) in self.data_dict['assignment_dict']])
+        assign_keys = set([(j,k) for (i,j,k) in self.selection_set])
         for (j,k) in assign_keys:
 
             corr_classes = class_orders[data_ind, j, k]
@@ -876,7 +823,7 @@ class Metrics(Data):
 
             creation_dict['pred_threshold'].append(np.arange(0, 1, 1/m))
             creation_dict['net_benefit'].append(net_benefit_list)
-            creation_dict['name'].append([names_dict[(data_ind,j,k)] for _ in range(m)])
+            creation_dict['name'].append([self.names_dict[(data_ind,j,k)] for _ in range(m)])
 
         
         #print(creation_dict['name'])
@@ -996,63 +943,6 @@ if __name__=="__main__":
     """
 
 
-    """
-    Report: Bimodal Multinormal Experiment Calibration Curves
-    -------------------------------------------------------------------------------------------------------------------------------------------
-    
-    
-    balancing_methods = {
-    "Unbalanced": None,
-    "ADASYN": ADASYN,
-    "RandomOverSampler": RandomOverSampler,
-    "KMeansSMOTE": KMeansSMOTE,
-    "SMOTE": SMOTE,
-    "BorderlineSMOTE": BorderlineSMOTE,
-    "SVMSMOTE": SVMSMOTE,
-    #"SMOTENC": SMOTENC,
-    }
-
-    classifiers_dict = {
-    "Decision Tree": DecisionTreeClassifier,
-    #"Random Forest": RandomForestClassifier,
-    "Logistic Regression": LogisticRegression,
-    #"SVC": SVC,
-    #"Naive Bayes": GaussianNB,
-    "XGboost": XGBClassifier,
-    "Lightgbm": LGBMClassifier
-    }
-
-    m = 20
-    for name, bal in balancing_methods.items():
-
-        balancer_dict = {name: bal}
-        #print(balancer_dict)
-        assessor = Assessor(0.2, [alt_experiment_dict], balancer_dict, classifiers_dict)
-        
-
-        assessor.generate()
-        assessor.balance()
-        assessor.clsf_pred()
-
-        #calibration curves test
-        #-------------------------------------------------------------------------------------------------------------------------------------------
-        doc_dict = {
-                "n_features": False,
-                "n_samples": False,
-                "class_ratio": False, 
-                "doc_string": False,
-                "balancer": False, 
-                "classifier": True
-            }
-        
-        assessor.create_calibration_curves(doc_dict, m, spline = True, save = False, title = f'Calibration Curves for {name}')
-        assessor.create_calibration_curves(doc_dict, m, spline = False, save = False, title = f'Calibration Curves for {name}')
-
-        
-        
-        #assessor.create_decision_curves(doc_dict = doc_dict, m = m, save = True, title = f'Decision Curves for {name}')
-    """
-
 
     """
     Presentation Experiment
@@ -1120,8 +1010,37 @@ if __name__=="__main__":
         4: 'Gamma Feature',
     }
 
-    #assessor.create_confusion_plots(doc_dict, feature1=0, feature2=2, feature_map = feature_map, save = False)
-    assessor.create_pred_proba_plots(doc_dict, feature1=0, feature2=2, feature_map = feature_map, save = False)
-    assessor.create_calibration_curves(doc_dict, spline = True, save = False, title = f'All Calibration Curves')
-    assessor.create_decision_curves(doc_dict = doc_dict, m=20, save = False, title = f'All Decision Curves')
+    selection_tuple_set = {
+        ('Decision Tree', 'Unbalanced'),
+        ('Lightgbm', 'KMeansSMOTE'),
+        ('Logistic Regression','Unbalanced'),
+        ('Random Forest', 'KMeansSMOTE'),
+        ('XGboost', 'RandomOverSampler')
+    }
+
+    assessor.create_confusion_plots(doc_dict,
+                                    selection_tuple_set,
+                                    feature1=0, 
+                                    feature2=2, 
+                                    feature_map = feature_map, 
+                                    save = False)
+    
+    assessor.create_pred_proba_plots(doc_dict,
+                                     selection_tuple_set,
+                                     feature1=0, 
+                                     feature2=2, 
+                                     feature_map = feature_map, 
+                                     save = False)
+    
+    assessor.create_calibration_curves(doc_dict,
+                                       selection_tuple_set, 
+                                       spline = True, 
+                                       save = False, 
+                                       title = f'Calibration Curves')
+    
+    assessor.create_decision_curves(doc_dict = doc_dict,
+                                    selection_tuple_set = selection_tuple_set,
+                                    m=20, 
+                                    save = False, 
+                                    title = f'Decision Curves')
     

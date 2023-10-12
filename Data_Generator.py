@@ -491,6 +491,7 @@ if __name__ == "__main__":
     """
     from Visualiser import RawVisualiser
     from gen_parameters import presentation_experiment_dict
+    from itertools import combinations
 
     visualiser = RawVisualiser()
 
@@ -511,29 +512,17 @@ if __name__ == "__main__":
         3: 'Poisson Feature',
         4: 'Gamma Feature',
     }
-    #visualiser.plot_2d_scatter((data[0], data[1]),0, 1)
-    visualiser.plot_2d_scatter_multiple_datasets_px(datasets, 
-                                                    feature1 = 0, 
-                                                    feature2 = 1,
-                                                    feature_map = feature_map,
-                                                    title = f'Bimodal Normal vs Unimodal Scatterplot',
-                                                    save = False
-                                                    )
     
-    visualiser.plot_2d_scatter_multiple_datasets_px(datasets, 
-                                                    feature1 = 2, 
-                                                    feature2 = 3,
-                                                    feature_map = feature_map,
-                                                    title = f'Beta vs Poisson',
-                                                    save = False
-                                                    )
-    
-    visualiser.plot_2d_scatter_multiple_datasets_px(datasets, 
-                                                    feature1 = 2, 
-                                                    feature2 = 4,
-                                                    feature_map = feature_map,
-                                                    title = f'Beta vs Gamma',
-                                                    save = False
-                                                    )
-    
+    for feature1, feature2 in combinations([0, 1, 2, 3, 4], 2):
+
+        title = f'{feature_map[feature1][:-8]} vs {feature_map[feature2][:-8]} Scatterplot'
+        visualiser.plot_2d_scatter_multiple_datasets_px(datasets, 
+                                                        feature1 = feature1, 
+                                                        feature2 = feature2,
+                                                        feature_map = feature_map,
+                                                        title = title,
+                                                        save = False
+                                                        )
+        
+        
     
